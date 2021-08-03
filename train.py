@@ -1,7 +1,9 @@
 import argparse
+import json
 import os
 import random
 import shutil
+import sys
 import time
 import warnings
 
@@ -23,8 +25,8 @@ model_names = sorted(name for name in models.__dict__
     and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-parser.add_argument('data', metavar='DIR',
-                    help='path to dataset')
+parser.add_argument('--data', metavar='DIR',
+                    help='path to dataset', required=True)
 parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                     choices=model_names,
                     help='model architecture: ' +
@@ -130,13 +132,36 @@ def main_worker(gpu, ngpus_per_node, args):
             args.rank = args.rank * ngpus_per_node + gpu
         dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
                                 world_size=args.world_size, rank=args.rank)
+    # initialize pathes
+    data_dir = args.data
+    img_dir  = os.path.join(data_dir, 'img')
+    traindir = os.path.join(img_dir, 'train')
+    valdir = os.path.join(img_dir, 'val')
+    network_dir = os.path.join(data_dir, 'network')
+    os.makedirs(network_dir, exist_ok=True)
+
+    # compute number of classes
+    clas_to_idx = dict()
+    dirs = os.listdir(traindir)
+    dirs.extend(os.listdir(valdir))
+    dirs = set(dirs)
+    num_classes = len(dirs)
+
     # create model
     if args.pretrained:
         print("=> using pre-trained model '{}'".format(args.arch))
         model = models.__dict__[args.arch](pretrained=True)
+        if args.arch == 'mobilenet_v2':
+            linear = nn.Linear(model.last_channel, num_classes)
+            nn.init.normal_(linear.weight, 0, 0.01)
+            nn.init.zeros_(linear.bias)
+            model.classifier[-1] = linear
+        else:
+            print('Unsupported model', args.arch)
+            sys.exit(-2)
     else:
         print("=> creating model '{}'".format(args.arch))
-        model = models.__dict__[args.arch]()
+        model = models.__dict__[args.arch](num_class=num_classes)
 
     if not torch.cuda.is_available():
         print('using CPU, this will be slow')
@@ -202,11 +227,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     cudnn.benchmark = True
 
-    data_dir = args.data
     # Data loading code
-    img_dir  = os.path.join(data_dir, 'img')
-    traindir = os.path.join(img_dir, 'train')
-    valdir = os.path.join(img_dir, 'val')
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
@@ -217,7 +238,12 @@ def main_worker(gpu, ngpus_per_node, args):
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize,
-        ]))
+        ])
+    )
+    # save class mapping
+    with open(os.path.join(network_dir, 'mapping.json'), 'w') as f:
+        json.dump(train_dataset.class_to_idx, f)
+
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -263,10 +289,12 @@ def main_worker(gpu, ngpus_per_node, args):
             save_checkpoint({
                 'epoch': epoch + 1,
                 'arch': args.arch,
+                'num_classes': num_classes,
+                'crop_size': args.crop_size,
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
                 'optimizer' : optimizer.state_dict(),
-            }, is_best, data_dir=data_dir)
+            }, is_best, data_dir=network_dir)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
