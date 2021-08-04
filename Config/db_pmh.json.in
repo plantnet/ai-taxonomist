@@ -1,0 +1,24 @@
+{
+    "Category": "Database",
+    "Type": "PMHManager",
+    "Settings": {
+        "Index": {
+            "compression_mode": true,
+            "transformer_type": "ORIGINAL_PCA_TRANSFORMER",
+            "number_of_index": 0,
+            "compression_dimension": @COMPRESSION@,
+            "embedderSamplesNb": @EMBEDDER_SAMPLES@
+        },
+        "QueryModeler": {
+            "query_type": "KNN_QUERY_TYPE",
+            "distance_type": "L2_DISTANCE_TYPE",
+            "knn_size": 2000,
+            "int_radius": 0,
+            "float_radius": 0.0,
+            "memory_size": @MEMORY@,
+            "pageMode": true,
+            "alpha_estimator_type": "AET_MEAN",
+            "threadsNb": @THREADS@
+        }
+    }
+}

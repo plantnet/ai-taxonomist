@@ -1,0 +1,36 @@
+{
+    "Category": "MultiDescriptor",
+    "Type": "TorchScript",
+    "Settings": {
+        "gpu": @GPU@,
+        "tile_size": @TILE_SIZE@,
+        "crop_size": @CROP_SIZE@,
+        "augment_queries": false,
+        "crop": true,
+        "mean": [0.485, 0.456, 0.406],
+        "std": [0.229, 0.224, 0.225],
+        "models": [
+            {
+                "weights": "network/@NETWORK@",
+                "num_classes": @NUM_CLASSES@,
+                "pipe": [
+                    {
+                        "layer": "@FEATURES@",
+                        "size": @FEAT_SIZE@,
+                        "extract": true
+                    },
+                    {
+                        "layer": "@LOGITS@",
+                        "size": @NUM_CLASSES@,
+                        "extract": false
+                    },
+                    {
+                        "layer": "prob",
+                        "size": @NUM_CLASSES@,
+                        "extract": true
+                    }
+                ]
+            }
+        ]
+    }
+}
