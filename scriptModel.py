@@ -85,7 +85,7 @@ def main():
     print("=> saving torchscript model '{}'".format(args.trace))
     traced.save(args.trace)
     with open(os.path.join(args.data, 'network', 'network.json'), 'w') as f:
-        json.dump({'network':'network.json', 'features':'features', 'logits':'logits', 'feat_size': model.feature_size,
+        json.dump({'network':'network.pt', 'features':'features', 'logits':'logits', 'feat_size': model.feature_size,
                    'num_classes': args.num_classes, 'arch':args.arch, 'img_size':args.size}, f)
 
 if __name__ == '__main__':
