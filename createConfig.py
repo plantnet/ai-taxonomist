@@ -12,7 +12,7 @@ def main():
     offline.add_argument('--memory', type=int, default=48000, help='Memory (in Mb) to use while building the image index')
     offline.add_argument('--threads', type=int, default=24, help='Number of threads to use while building the image index')
     online = parser.add_argument_group('online', 'parameters who impact snoop at run time')
-    online.add_argument('--cpu', action='store_true', help='Do not run on gpu')
+    online.add_argument('--gpu', type=int, default=[], nargs='*', help='Wich gpu to use at run time, if any')
     online.add_argument('--port', type=int, default=8080, help='which port to launch the snoop on')
     online.add_argument('--snoop-threads', type=int, default=10, help='how many parallel request to handle')
     online.add_argument('--proxy', type=str, default="", help='proxy to use while downloading the images')
@@ -34,7 +34,7 @@ def main():
         '@MEMORY@': args.memory,
         '@THREADS@': args.threads,
         # Descriptors
-        '@GPU@': 'false' if args.cpu else 'true' ,
+        '@GPU@': 'true' if len(args.gpu) else 'false',
         '@TILE_SIZE@': tile_size,
         '@CROP_SIZE@': crop_size,
         '@NETWORK@': network.get('network', 'network.pt'),
@@ -47,6 +47,7 @@ def main():
         '@MAIN_THREAD@': args.snoop_threads,
         '@HTTP_PROXY@': args.proxy,
         '@CNN_VERSION@': network.get('arch', 'dnn'),
+        '@GPU_ID@': args.gpu
     }
 
     config_dir = os.path.join(args.data, 'Config')

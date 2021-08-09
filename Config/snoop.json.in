@@ -2,11 +2,12 @@
     "server": {
         "port": @PORT@,
         "nb_main_threads": @MAIN_THREAD@,
-        "gpu": @GPU@,
         "proxy": "@HTTP_PROXY@"
     },
     "snoop": {
-        "feature_name": "@FEATURES@",
+        "gpu": @GPU@,
+        "gpu_id": @GPU_ID@,
+        "feature_layer": "@FEATURES@",
         "prob_layer": "prob",
         "feature_size": @FEAT_SIZE@,
         "nb_result_classif": 250,
@@ -15,7 +16,7 @@
         "alpha": 0.9,
         "min_score": 0.005,
         "sum_score": 0.99,
-        "nb_image_per_species": 6
-    },
-    "cnn_version": "C4C @CNN_VERSION@"
+        "nb_image_per_species": 6,
+        "cnn_version": "C4C @CNN_VERSION@"
+    }
 }

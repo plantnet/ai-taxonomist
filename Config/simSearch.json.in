@@ -1,0 +1,23 @@
+{
+    "ObjectRetrieval": {
+        "global": "true",
+        "query_type": "WAITING_FILE",
+        "alpha": 0.8,
+        "i32_nb_iter_ransac": "0",
+        "i_mode_ransac": "GLOBAL_ROTATION_AND_SCALE_MODEL",
+        "f_score_min": "0.5",
+        "f_robust_estimator_threshold_parameter": "16",
+        "f_characteristic_angle_filter_parameter": "0.8",
+        "knn_vt": "KVT_CLOSEST",
+        "rtet": "RTET_VAR_MEAN",
+        "f_rtet_param": "0.25",
+        "rsft": "RSFT_RESIDUE_TH_AND_CHARAC_SOL_ERROR",
+        "mwbodt": "MWBODT_HAMMING_LINEAR_W",
+        "rsfbodt": "RSFBODT_NONE"
+    },
+    "SimilaritySearchers": {
+        "d_depth_": 0,
+        "ui32_core_nb_": 1,
+        "ui32_knn_size": 2000
+    }
+}
