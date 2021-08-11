@@ -5,6 +5,7 @@ import sys
 import torchvision.models as models
 import torch.nn as nn
 import torch
+from models.tools import *
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
@@ -17,29 +18,6 @@ parser.add_argument('--data', metavar='DIR',
 parser.add_argument("--snapshot", type=str, help="Input snapshot.pth.tar", default=None)
 # parser.add_argument('--crop-size', default=224, type=int,
 #                     help='Network input image size')
-
-
-class TraceMobileNetV2(nn.Module):
-    def __init__(self, model):
-        super(TraceMobileNetV2, self).__init__()
-        self.model = model
-        self.feature_size = model.last_channel
-
-    def eval(self):
-        self.model.eval()
-
-    def features(self, x):
-        x = self.model.features(x)
-        x = nn.functional.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
-        return x
-
-    def logits(self, x):
-        return self.model.classifier(x)
-
-    def forward(self, x):
-        x = self.features(x)
-        x = self.logits(x)
-        return x
 
 
 def main():
@@ -69,16 +47,14 @@ def main():
             state_dict[k.removeprefix('module.')] = v
 
     print("=> creating model '{}'".format(args.arch))
-    if args.arch == 'mobilenet_v2':
-        base_model = models.__dict__[args.arch](num_classes=args.num_classes)
-        base_model.load_state_dict(state_dict)
-        model = TraceMobileNetV2(base_model)
-    else:
+    base_model = models.__dict__[args.arch](num_classes=args.num_classes)
+    base_model.load_state_dict(state_dict)
+    model = traceable_module(base_model)
+    if not model:
         print("=> model architecture '{}' is not supported".format(args.arch))
         sys.exit(-2)
 
     print("=> tracing model")
-    model.eval()
     input = torch.rand(1, 3, args.size, args.size)
     features = model.features(input)
     traced = torch.jit.trace_module(model, {'features': input, 'logits': features})

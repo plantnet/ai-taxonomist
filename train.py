@@ -19,6 +19,7 @@ import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
+from models.tools import reset_classifier
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
@@ -150,18 +151,19 @@ def main_worker(gpu, ngpus_per_node, args):
     # create model
     if args.pretrained:
         print("=> using pre-trained model '{}'".format(args.arch))
-        model = models.__dict__[args.arch](pretrained=True)
-        if args.arch == 'mobilenet_v2':
-            linear = nn.Linear(model.last_channel, num_classes)
-            nn.init.normal_(linear.weight, 0, 0.01)
-            nn.init.zeros_(linear.bias)
-            model.classifier[-1] = linear
+        if args.arch == 'inception_v3':
+            model = models.__dict__[args.arch](pretrained=True, transform_input=False)
         else:
+            model = models.__dict__[args.arch](pretrained=True)
+        if reset_classifier(model, num_classes)<0:
             print('Unsupported model', args.arch)
             sys.exit(-2)
     else:
         print("=> creating model '{}'".format(args.arch))
-        model = models.__dict__[args.arch](num_class=num_classes)
+        if args.arch == 'inception_v3':
+            model = models.__dict__[args.arch](num_class=num_classes, transform_input=False)
+        else:
+            model = models.__dict__[args.arch](num_class=num_classes)
 
     if not torch.cuda.is_available():
         print('using CPU, this will be slow')
@@ -187,12 +189,7 @@ def main_worker(gpu, ngpus_per_node, args):
         torch.cuda.set_device(args.gpu)
         model = model.cuda(args.gpu)
     else:
-        # DataParallel will divide and allocate batch_size to all available GPUs
-        if args.arch.startswith('alexnet') or args.arch.startswith('vgg'):
-            model.features = torch.nn.DataParallel(model.features)
-            model.cuda()
-        else:
-            model = torch.nn.DataParallel(model).cuda()
+        model = torch.nn.DataParallel(model).cuda()
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda(args.gpu)
