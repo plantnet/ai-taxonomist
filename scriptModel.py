@@ -23,7 +23,6 @@ parser.add_argument("--snapshot", type=str, help="Input snapshot.pth.tar", defau
 def main():
     args = parser.parse_args()
 
-    args.trace = os.path.join(args.data, 'network', 'network.pt')
     if not args.snapshot:
         args.snapshot = os.path.join(args.data, 'network', 'model_best.pth.tar')
 
@@ -36,6 +35,8 @@ def main():
     device = torch.device('cpu')
     checkpoint = torch.load(args.snapshot, map_location=device)
     args.arch = checkpoint['arch']
+    trace_file = os.path.join('network', args.arch+'.pt')
+    args.trace = os.path.join(args.data, trace_file)
     args.num_classes = checkpoint['num_classes']
     args.size = checkpoint['crop_size']
     # get rid of ddp
@@ -61,7 +62,7 @@ def main():
     print("=> saving torchscript model '{}'".format(args.trace))
     traced.save(args.trace)
     with open(os.path.join(args.data, 'network', 'network.json'), 'w') as f:
-        json.dump({'network':'network.pt', 'features':'features', 'logits':'logits', 'feat_size': model.feature_size,
+        json.dump({'network':trace_file, 'features':'features', 'logits':'logits', 'feat_size': model.feature_size,
                    'num_classes': args.num_classes, 'arch':args.arch, 'img_size':args.size}, f)
 
 if __name__ == '__main__':

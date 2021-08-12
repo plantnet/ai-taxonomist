@@ -37,7 +37,7 @@ def main():
         '@GPU@': 'true' if len(args.gpu) else 'false',
         '@TILE_SIZE@': tile_size,
         '@CROP_SIZE@': crop_size,
-        '@NETWORK@': network.get('network', 'network.pt'),
+        '@NETWORK@': network.get('network', os.path.join('network','network.pt')),
         '@NUM_CLASSES@': network.get('num_classes', 1000),
         '@FEATURES@': network.get('features', 'features'),
         '@FEAT_SIZE@': network.get('feat_size', 1024),

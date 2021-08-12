@@ -11,7 +11,7 @@
         "std": [0.229, 0.224, 0.225],
         "models": [
             {
-                "weights": "network/@NETWORK@",
+                "weights": "@NETWORK@",
                 "num_classes": @NUM_CLASSES@,
                 "pipe": [
                     {
