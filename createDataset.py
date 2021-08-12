@@ -1,51 +1,106 @@
+import sys
 import gbif_dl
 import argparse
 import json
 import os
+import pygbif.species.name_backbone as gbif_species
 
-import torch
-from torchvision import transforms, datasets
+
+def crawlNames(args: dict) -> list:
+    species_ids = []
+    other = []
+    cnt = 0
+    for n in args.names:
+        n = n.rstrip()
+        data = gbif_species(name=n, rank='species', verbose=args.verbose)
+        # status = data.get('status', 'unknown')
+        match = data.get('matchType', 'unknown')
+        rank = data.get('rank', None)
+        id = data.get('speciesKey', None)
+
+        if match == 'EXACT' and rank == 'SPECIES' and id:
+            species_ids.append(id)
+        else:
+            print(n, 'does not match any species in gbif', {'name': n, 'rank': rank, 'match': match})
+            if args.verbose:
+                print(data)
+            other.append({'name': n, 'gbif': data})
+        cnt += 1
+        if args.verbose and cnt % 50 == 0:
+            print(cnt, 'species matched')
+    else:
+        print('Unable to get gbif info for name', n)
+
+    if len(other):
+        output = os.path.join(args.data,'no_species.json')
+        print('some species names do not match any species, see', output, 'for details')
+        with open(output, 'w') as f:
+            json.dump(other, f)
+
+    with open(os.path.join(args.data, 'species_ids.json'), 'w') as f:
+        json.dump(species_ids, f)
+
+    return species_ids
 
 def main():
     parser = argparse.ArgumentParser(description='Cos4Cloud dataset creation')
-    parser.add_argument('-s', '--species', type=argparse.FileType('r'),
-                        help='json file listing species ids', required=True)
-    parser.add_argument('-p', '--providers', type=argparse.FileType('r'),
-                        help='json file listing providers ids')
-    parser.add_argument('-d', '--data', help='where to store images', required=True)
+    required = parser.add_argument_group('required argument')
+    required.add_argument('--data', help='where to store dataset information and images', required=True)
     parser.add_argument('-n', '--number', type=int, metavar='N', default=1000,
                         help='Number of images per species')
     parser.add_argument('-v', '--verbose', action='store_true', default=False)
     parser.add_argument('--no-crawl', action='store_false', dest='crawl',
-                        help='Crawl GBif to get urls, or use the store data/url.json file')
+                        help='do not crawl gbif, use the stored DATA/images.json file instead')
     parser.add_argument('--no-download', action='store_false', dest='download',
-                        help='Download images or only store the data/url.json file and exit')
+                        help='do not download images')
+    novice = parser.add_argument_group(title='novice usage', description='requires no previous knowledge of gbif')
+    novice.add_argument('--names', type=argparse.FileType('r'),
+                        help='text file with one species canonical name per line')
+    intermediate = parser.add_argument_group(title='intermediate usage', description='requires some knowledge of gbif')
+    intermediate.add_argument('--species', type=argparse.FileType('r'),
+                        help='json file listing gbif species ids')
+    intermediate.add_argument('--providers', type=argparse.FileType('r'),
+                        help='json file listing gbif providers ids')
+    # expert = parser.add_argument_group(title='expert', description='requires to fully understand gbif')
+    # expert.add_argument('--doi', type=str, help="a gbif's query doi")
 
     args = parser.parse_args()
 
     os.makedirs(args.data, exist_ok=True)
 
-    urls = []
+    species_ids = []
     if args.crawl:
-        species = json.load(args.species)
-        providers = json.load(args.providers)
-        queries = {'speciesKey': species, 'datasetKey': providers}
+        if args.names:
+            if args.species or args.doi:
+                print('it does not make sens to provide both --name and --species or --doi arguments')
+                sys.exit(-1)
+            species_ids = crawlNames(args)
+        elif args.species:
+            species_ids = json.load(args.species)
+        #handle doi
+
+        urls = []
+        if args.providers:
+            providers = json.load(args.providers)
+            queries = {'speciesKey': species_ids, 'datasetKey': providers}
+        else:
+            queries = {'speciesKey': species_ids}
         data_generator = gbif_dl.api.generate_urls(queries=queries, label='speciesKey', nb_samples_per_stream=args.number,
-                                                   split_streams_by=['speciesKey'], mediatype='StillImage')
-        print('Retrieving urls...')
+                                                   split_streams_by=['speciesKey'], mediatype='StillImage', verbose=args.verbose)
+        print('Retrieving image metadata...')
         for i in data_generator:
             if args.verbose:
                 print(i)
             urls.append(i)
             if len(urls) % 500 == 0:
-                print(len(urls),'url retrieved')
-        with open(args.data+"/urls.json", 'w') as f:
+                print(len(urls),'image metadata retrieved')
+        with open(args.data+"/images.json", 'w') as f:
             json.dump(urls, f)
-        print(len(urls), 'urls saved in', args.data + "/urls.json")
+        print(len(urls), 'image metadata saved in', args.data + "/images.json")
     else:
-        with open(args.data + "/urls.json", 'r') as f:
+        with open(args.data + "/images.json", 'r') as f:
             urls = json.load(f)
-        print(len(urls), 'urls loaded in', args.data+"/urls.json")
+        print(len(urls), 'image metadata loaded in', args.data+"/urls.json")
 
     if args.download:
         img_dir = os.path.join(args.data, 'img')
