@@ -1,2 +1,3 @@
 gbif_dl
 .*.sw?
+models/__pycache__/
