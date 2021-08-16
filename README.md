@@ -3,14 +3,14 @@
 Automatically (ou presque) generate a Pl@ntNet like identification engine from a list of species
 
 ## Requirements:
-    * pytorch (https://pytorch.org/get-started/locally/)
-    * gbif-dl (pip install gbif-dl)
-    * a working docker (>19.03) and a _Snoop_ docker image
-        * registry.gitlab.inria.fr/snoop/c4c-identify/cpu:latest to run on cpu only
-        * registry.gitlab.inria.fr/snoop/c4c-identify/cu111:latest to run on cuda (at least 11.1) gpus 
-            * nvidia-docker is also required in this case
+* pytorch (https://pytorch.org/get-started/locally/)
+* gbif-dl (pip install gbif-dl)
+* a working docker (>19.03) and a _Snoop_ docker image
+    * registry.gitlab.inria.fr/snoop/c4c-identify/cpu:latest to run on cpu only
+    * registry.gitlab.inria.fr/snoop/c4c-identify/cu111:latest to run on cuda (at least 11.1) gpus 
+        * nvidia-docker is also required in this case
 
-`--help` is your friend !
+                               `--help` is your friend !
 
 ## Examples
    The `frogs` directory contains required data to build a c3c-identification engine on the 'Rana' genus (frogs).
