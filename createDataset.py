@@ -5,6 +5,14 @@ import json
 import os
 import pygbif.species.name_backbone as gbif_species
 
+# Used by the single thread download
+from gbif_dl.io import MediaData
+import requests
+from typing import AsyncGenerator, Callable, Generator, Union, Optional
+from pathlib import Path
+import random
+import hashlib
+import filetype
 
 def crawlNames(args: dict) -> list:
     species_ids = []
@@ -42,6 +50,84 @@ def crawlNames(args: dict) -> list:
 
     return species_ids
 
+
+def downloadMedia(item: MediaData, root: str, random_subsets: dict ={'train': 0.95, 'val': 0.05},
+                  is_valid_file: Optional[Callable[[bytes], bool]] = None,
+                  overwrite: bool = False,
+                  proxy: Optional[str] = None,
+                  ) -> None:
+    if isinstance(item, dict):
+        url = item.get("url")
+        basename = item.get("basename")
+        label = item.get("label")
+        subset = item.get("subset")
+    else:
+        url = item
+        label, basename, subset = None, None, None
+
+    if subset is None and random_subsets is not None:
+        subset_choices = list(random_subsets.keys())
+        p = list(random_subsets.values())
+        subset = random.choices(subset_choices, weights=p, k=1)[0]
+
+    label_path = Path(root)
+
+    if subset is not None:
+        label_path /= Path(subset)
+
+    # create subfolder when label is a single str
+    if isinstance(label, str):
+        # append label path
+        label_path /= Path(label)
+
+    label_path.mkdir(parents=True, exist_ok=True)
+
+    if basename is None:
+        # hash the url
+        basename = hashlib.sha1(url.encode("utf-8")).hexdigest()
+
+    check_files_with_same_basename = label_path.glob(basename + "*")
+    if list(check_files_with_same_basename) and not overwrite:
+        # do not overwrite, skips based on base path
+        return
+
+    proxies = None
+    if proxy:
+        proxies={'http':proxy, 'https':proxy}
+    res = requests.get(url, proxies=proxies)
+
+    # Check everything went well
+    if res.status_code != 200:
+        print(f"Download failed: {res.status}")
+        return
+
+    content = res.content
+
+    # guess mimetype and suffix from content
+    kind = filetype.guess(content)
+    if kind is None:
+        return
+    else:
+        suffix = "." + kind.extension
+        mime = kind.mime
+
+
+    if is_valid_file is not None:
+        if not is_valid_file(content):
+            print(f"File check failed")
+            return
+
+    file_base_path = label_path / basename
+    file_path = file_base_path.with_suffix(suffix)
+    with open(file_path, 'wb') as f:
+        f.write(content)
+    if isinstance(label, dict):
+        json_path = (label_path / item["basename"]).with_suffix(".json")
+        with open(json_path, mode="+w") as fp:
+            fp.write(json.dumps(label))
+
+
+
 def main():
     parser = argparse.ArgumentParser(description='Cos4Cloud dataset creation')
     required = parser.add_argument_group('required argument')
@@ -53,6 +139,7 @@ def main():
                         help='do not crawl gbif, use the stored DATA/images.json file instead')
     parser.add_argument('--no-download', action='store_false', dest='download',
                         help='do not download images')
+    parser.add_argument('--single_thread_dl', action='store_true', default=False)
     novice = parser.add_argument_group(title='novice usage', description='requires no previous knowledge of gbif')
     novice.add_argument('--names', type=argparse.FileType('r'),
                         help='text file with one species canonical name per line')
@@ -118,8 +205,17 @@ def main():
     if args.download:
         img_dir = os.path.join(args.data, 'img')
         print("Downloading images to", img_dir)
-        gbif_dl.io.download(urls, root=img_dir, random_subsets={'train':0.95, 'val':0.05},
-                            nb_workers=1, retries=1, verbose=args.verbose)
+        if args.single_thread_dl:
+            cnt = 0
+            for i in urls:
+                downloadMedia(i, root=img_dir, random_subsets={'train':0.95, 'val':0.05})
+                cnt += 1
+                if cnt % 500 == 0:
+                    print('\timage', cnt,'on', len(urls), 'downloaded')
+        else:
+            gbif_dl.io.download(urls, root=img_dir, random_subsets={'train':0.95, 'val':0.05},
+                            nb_workers=6, retries=1, verbose=args.verbose)
+
         print('Images downloaded')
     else:
         print('Download skipped')
