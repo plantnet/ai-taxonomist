@@ -139,7 +139,7 @@ def main():
                         help='do not crawl gbif, use the stored DATA/images.json file instead')
     parser.add_argument('--no-download', action='store_false', dest='download',
                         help='do not download images')
-    parser.add_argument('--single_thread_dl', action='store_true', default=False)
+    parser.add_argument('--single-thread-dl', action='store_true', default=False)
     novice = parser.add_argument_group(title='novice usage', description='requires no previous knowledge of gbif')
     novice.add_argument('--names', type=argparse.FileType('r'),
                         help='text file with one species canonical name per line')

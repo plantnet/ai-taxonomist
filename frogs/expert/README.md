@@ -2,5 +2,5 @@ We've prepared a gbif query to retrieve occurencies on genus Rana from trusted p
 
 Just try
 ```
-python createDatabase.py --data /path/to/data --doi 10.15468/dl.bx6xeq
+python createDataset.py --data /path/to/data --doi 10.15468/dl.bx6xeq
 ```
