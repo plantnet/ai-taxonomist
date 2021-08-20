@@ -117,53 +117,8 @@ def draw(val, args):
                     ax2.plot(val[k1][k2]['x'], val[k1][k2]['y'], label = k1+' '+k2, color=colors[colorIdx])
                     colorIdx = (colorIdx + 1) % len(colors)
 
-    # ax4 = ax2.twinx()
-    # ax4.set_ylabel('\nSpeed', color=colors[colorIdx])
-    # ax4.tick_params(axis='y', color=colors[colorIdx], direction='in', labelcolor=colors[colorIdx], rotation=90)
-    # ax4.plot(data['Speed']['x'], data['Speed']['y'], label="Speed", color=colors[colorIdx], linestyle='dashdot')
-    # colorIdx = (colorIdx + 1) % len(colors)
-
     ax3.set_yscale('log')
     fig.legend(loc=2)
-
-    #    locs, labels = plt.xticks()
-
-    # print("Epoch", epoch)
-    # print('Learning rate', lr['y'][-1])
-    # for k in perf.keys():
-    #     v = perf[k]['y'][-1]
-    #     print(k, v)
-    # t = 0
-    #
-    # # if 'Time' in train.keys():
-    # #     t += sum(train['Time']['avg'])/float(len(train['Time']['avg']))
-    # # t /= len(train)
-    # # print('Train Time', t)
-    # # t = 0
-    # # if 'Data' in train.keys():
-    # #     t += sum(train['Data']['avg'])/float(len(train['Data']['avg']))
-    # # print('Data loading', t)
-    # # t = 0
-    # # if 'Time' in test.keys():
-    # #     t+= sum(test['Time']['avg'])/float(len(test['Time']['avg']))
-    # # print('Test Time', t)
-    #
-    # if 'Loss' in train.keys():
-    #     print('Training loss', train['Loss']['avg'][-1])
-    # if 'Loss' in test.keys():
-    #     print('Testing loss', test['Loss']['avg'][-1])
-    #
-    # if args.max_prec:
-    #     print('Best epoch', epoch_best)
-    #     if len(perf['Top1']['y']) > epoch_best - 1:
-    #         print('Best Top1', perf['Top1']['y'][epoch_best - 1])
-    #     if len(perf['Top5']['y']) > epoch_best - 1:
-    #         print('Best Top5', perf['Top5']['y'][epoch_best - 1])
-    #
-    # if 'Duration' in perf.keys():
-    #     d = sum(perf['Duration']['y'])
-    #     print('Duration avg {avg:.3f}'.format(avg=d / float(len(perf['Duration']['y']))))
-    #     print('Total duration {sec:.2f} s (or {hour:.3f} h)'.format(sec=d, hour=d / 3600))
 
     plot.draw()
     plot.show()
@@ -179,6 +134,26 @@ def main():
 
     # process output
     val = process(log=args.log)
+
+    # best epoch
+    best_epoch1 = 0
+    best_epoch5 = 0
+    best_acc1 = 0
+    best_acc5 = 0
+    k1 = 'Accuracy'
+    k2 = 'Acc@1'
+    for i in range(0, len(val[k1][k2]['x'])):
+        if val[k1][k2]['y'][i] > best_acc1:
+            best_epoch1 = val[k1][k2]['x'][i]
+            best_acc1 = val[k1][k2]['y'][i]
+    k2 = 'Acc@5'
+    for i in range(0, len(val[k1][k2]['x'])):
+        if val[k1][k2]['y'][i] > best_acc5:
+            best_epoch5 = val[k1][k2]['x'][i]
+            best_acc5 = val[k1][k2]['y'][i]
+
+    print('Best Acc@1', best_acc1, 'at epoch', best_epoch1)
+    print('Best Acc@5', best_acc5, 'at epoch', best_epoch5)
 
     # plot
     draw(val, args)
