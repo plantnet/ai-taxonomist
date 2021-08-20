@@ -48,7 +48,11 @@ def main():
             state_dict[k.removeprefix('module.')] = v
 
     print("=> creating model '{}'".format(args.arch))
-    base_model = models.__dict__[args.arch](num_classes=args.num_classes)
+    if args.arch == 'inception_v3':
+        base_model = models.__dict__[args.arch](num_classes=args.num_classes, transform_input=False,
+                                               aux_logits=True, init_weights=False)
+    else:
+        base_model = models.__dict__[args.arch](num_classes=args.num_classes)
     base_model.load_state_dict(state_dict)
     model = traceable_module(base_model)
     if not model:
