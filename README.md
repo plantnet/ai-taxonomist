@@ -10,34 +10,39 @@ Automatically (ou presque) generate a Pl@ntNet like identification engine from a
     * registry.gitlab.inria.fr/snoop/c4c-identify/cu111:latest to run on cuda (at least 11.1) gpus 
         * nvidia-docker is also required in this case
 
-                               `--help` is your friend !
+
+ > `--help` is your friend !
 
 ## Examples
-   The `frogs` directory contains required data to build a c3c-identification engine on the 'Rana' genus (frogs).
-   It is declined accordingly to how familiar you are with `gbif`
-   * novice: no prior knowledge of gbif required
-   * intermediate: require to visit https://www.gbif.org/ and pick some gbif species ids and related datasets ids
-   * expert: for those able to make complex gbif request and save them as DOI 
+The `frogs` directory contains required data to build a c3c-identification engine on the 'Rana' genus (frogs).
+It is declined accordingly to how familiar you are with `gbif`
+* novice: no prior knowledge of gbif required
+* intermediate: require to visit https://www.gbif.org/ and pick some gbif species ids and related datasets ids
+* expert: for those able to make complex gbif request and save them as DOI 
 
 ## Offline preparation
 
 ### Create the C4C Dataset `createDataset.py`
-   This stage will extract needed information from `gbif`, download occurrences images and create a training and a validation set in `/data/frogs/imgs`
+This stage will extract needed information from `gbif`, download occurrences images and create a training and a validation set in `/data/frogs/imgs`
 
 #### `frogs/novice`
-   The file `species_names.txt` contains a list of scientific names of species from the `Rana` genus, 1 name per line
+The file `species_names.txt` contains a list of scientific names of species from the `Rana` genus, 1 name per line
+
 ```bash
 python createDataset.py --data /data/frogs --names frogs/novice/species_names.txt --number 500
 ```
 
 #### `frogs/intermediate`
-    Json files `species_id.json` and `providers.json` respectively list some `Rana` species ids and some dataset ids
+
+Json files `species_id.json` and `providers.json` respectively list some `Rana` species ids and some dataset ids
+
 ```bash
 python createDataset.py --data /data/frogs --species frogs/intermediate/species_id.json --providers frogs/intermediate/providers.json --number 500
 ```
 
 #### `frogs/expert`
-    A gbif expert has prepared a query: https://doi.org/10.15468/dl.bx6xeq
+A gbif expert has prepared a query: https://doi.org/10.15468/dl.bx6xeq
+
 ```bash
 python createDataset.py --data /data/frogs --doi 10.15468/dl.bx6xeq
 ```
