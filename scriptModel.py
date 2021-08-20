@@ -24,7 +24,7 @@ def main():
     args = parser.parse_args()
 
     if not args.snapshot:
-        args.snapshot = os.path.join(args.data, 'network', 'model_best.pth.tar')
+        args.snapshot = os.path.join(args.data, 'network', args.arch+'_best.pth.tar')
 
     # load snapshot
     if not os.path.isfile(args.snapshot):
