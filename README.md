@@ -5,6 +5,7 @@ Automatically (ou presque) generate a Pl@ntNet like identification engine from a
 ## Requirements:
 * pytorch (https://pytorch.org/get-started/locally/)
 * gbif-dl (pip install gbif-dl)
+* scipy (pip install scipy)
 * a working docker (>19.03) and a _Snoop_ docker image
     * registry.gitlab.inria.fr/snoop/c4c-identify/cpu:latest to run on cpu only
     * registry.gitlab.inria.fr/snoop/c4c-identify/cu111:latest to run on cuda (at least 11.1) gpus 
