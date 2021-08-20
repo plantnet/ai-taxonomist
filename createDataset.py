@@ -103,7 +103,7 @@ def downloadMedia(item: MediaData, root: str, random_subsets: dict ={'train': 0.
 
     # Check everything went well
     if res.status_code != 200:
-        print(f"Download failed: {res.status}")
+        print(f"Download failed: {res.status_code}")
         return
 
     content = res.content
