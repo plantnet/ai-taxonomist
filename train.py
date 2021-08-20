@@ -53,8 +53,8 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
 parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)',
                     dest='weight_decay')
-parser.add_argument('-p', '--print-freq', default=10, type=int,
-                    metavar='N', help='print frequency (default: 10)')
+parser.add_argument('-p', '--print-freq', default=100, type=int,
+                    metavar='N', help='print frequency (default: 100)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
@@ -80,9 +80,24 @@ parser.add_argument('--multiprocessing-distributed', action='store_true',
                          'multi node data parallel training')
 parser.add_argument('--crop-size', default=224, type=int,
                     help='Network input image size')
+sched_params = parser.add_argument_group('reduce on plateau learning rate scheduler parameters')
+sched_params.add_argument('--factor', type=float, default=0.1, required=False,
+                          help='Factor by which the learning rate will be reduced')
+sched_params.add_argument('--patience', type=int, default=10, required=False,
+                          help='Number of epochs with no improvement after which learning rate will be reduced')
+sched_params.add_argument('--threshold', type=float, default=1e-4, required=False,
+                          help='Threshold for measuring the new optimum, to only focus on significant changes')
+sched_params.add_argument('--threshold_mode', type=str, default='rel', choices=['rel', 'abs'], required=False,
+                          help='is the threshold relative or absolute')
+sched_params.add_argument('--cooldown', type=int, default=0, required=False,
+                          help='Number of epochs to wait before resuming normal operation after lr has been reduced')
+sched_params.add_argument('--min_lr', type=float, default=0, required=False,
+                          help='A lower bound on the learning rate of all param groups')
+sched_params.add_argument('--eps', type=float, default=1e-8, required=False,
+                          help='Minimal decay applied to lr. '
+                               'If the difference between new and old lr is smaller than eps, the update is ignored')
 
 best_acc1 = 0
-
 
 def main():
     args = parser.parse_args()
@@ -201,7 +216,10 @@ def main_worker(gpu, ngpus_per_node, args):
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='min', verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer=optimizer, mode='min', factor=args.factor, patience=args.patience,
+        threshold=args.threshold, threshold_mode=args.threshold_mode, cooldown=args.cooldown,
+        min_lr=args.min_lr, eps=args.eps, verbose=True)
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -279,6 +297,7 @@ def main_worker(gpu, ngpus_per_node, args):
         # evaluate on validation set
         acc1, loss = validate(val_loader, model, criterion, args)
         scheduler.step(loss)
+        print('LearningRate: {epoch} {lr:.4e}'.format(epoch=epoch, lr=scheduler._last_lr[0]))
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
