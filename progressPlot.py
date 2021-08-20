@@ -20,7 +20,8 @@ def process(log):
             x = float(epoch) + float(step) / float(train_max_step)
             for i in range(1, len(words)):
                 match = re.match(
-                    r'(?P<name>\S+) +(?P<val>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?) +\( *(?P<avg>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)\)',
+                    r'(?P<name>\S+) +(?P<val>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?) +'
+                    r'\( *(?P<avg>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)\)',
                     words[i])
                 name = match.group('name')
                 val = float(match.group('val'))
@@ -35,7 +36,8 @@ def process(log):
             x = float(epoch) + float(step) / float(test_max_step)
             for i in range(1, len(words)):
                 match = re.match(
-                    r'(?P<name>\S+) +(?P<val>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?) +\( *(?P<avg>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)\)',
+                    r'(?P<name>\S+) +(?P<val>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?) +'
+                    r'\( *(?P<avg>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)\)',
                     words[i])
                 name = match.group('name')
                 val = float(match.group('val'))
