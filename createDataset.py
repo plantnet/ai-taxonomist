@@ -94,7 +94,12 @@ def downloadMedia(item: MediaData, root: str, random_subsets: dict ={'train': 0.
     proxies = None
     if proxy:
         proxies={'http':proxy, 'https':proxy}
-    res = requests.get(url, proxies=proxies)
+    res = None
+    try:
+        res = requests.get(url, proxies=proxies)
+    except Exception as e:
+        print('Failed to download', url,':', e)
+        return
 
     # Check everything went well
     if res.status_code != 200:
@@ -104,7 +109,13 @@ def downloadMedia(item: MediaData, root: str, random_subsets: dict ={'train': 0.
     content = res.content
 
     # guess mimetype and suffix from content
-    kind = filetype.guess(content)
+    kind = None
+    try:
+        kind = filetype.guess(content)
+    except Exception as e:
+        print('Failed to find type of', url, ':', e)
+        return
+
     if kind is None:
         return
     else:
