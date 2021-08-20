@@ -35,8 +35,8 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                     help='model architecture: ' +
                         ' | '.join(model_names) +
                         ' (default: resnet18)')
-parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
-                    help='number of data loading workers (default: 4)')
+parser.add_argument('-j', '--workers', default=2, type=int, metavar='N',
+                    help='number of data loading workers (default: 2)')
 parser.add_argument('--epochs', default=90, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
@@ -179,9 +179,9 @@ def main_worker(gpu, ngpus_per_node, args):
     else:
         print("=> creating model '{}'".format(args.arch))
         if args.arch == 'inception_v3':
-            model = models.__dict__[args.arch](num_class=num_classes, transform_input=False)
+            model = models.__dict__[args.arch](num_classes=num_classes, transform_input=False)
         else:
-            model = models.__dict__[args.arch](num_class=num_classes)
+            model = models.__dict__[args.arch](num_classes=num_classes)
 
     if not torch.cuda.is_available():
         print('using CPU, this will be slow')
