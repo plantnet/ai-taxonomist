@@ -1,3 +1,5 @@
+# Inspired from https://github.com/pytorch/examples/tree/master/imagenet
+
 import argparse
 import json
 import os
@@ -152,7 +154,8 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.pretrained:
         print("=> using pre-trained model '{}'".format(args.arch))
         if args.arch == 'inception_v3':
-            model = models.__dict__[args.arch](pretrained=True, transform_input=False)
+            model = models.__dict__[args.arch](pretrained=True, transform_input=False,
+                                               aux_logits=True, init_weights=False)
         else:
             model = models.__dict__[args.arch](pretrained=True)
         if reset_classifier(model, num_classes)<0:
@@ -318,12 +321,16 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         if torch.cuda.is_available():
             target = target.cuda(args.gpu, non_blocking=True)
 
-        # compute output
+        # compute output and measure accuracy
         output = model(images)
-        loss = criterion(output, target)
+        if isinstance(output, models.InceptionOutputs):
+            loss = criterion(output.logits, target) + 0.4 * criterion(output.aux_logits, target)
+            acc1, acc5 = accuracy(output.logits, target, topk=(1, 5))
+        else:
+            loss = criterion(output, target)
+            acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
-        # measure accuracy and record loss
-        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        # record loss
         losses.update(loss.item(), images.size(0))
         top1.update(acc1[0], images.size(0))
         top5.update(acc5[0], images.size(0))
