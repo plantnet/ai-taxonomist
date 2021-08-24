@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import os
 import random
 import shutil
@@ -80,6 +81,8 @@ parser.add_argument('--multiprocessing-distributed', action='store_true',
                          'multi node data parallel training')
 parser.add_argument('--crop-size', default=224, type=int,
                     help='Network input image size')
+parser.add_argument('--imbalanced', action='store_true', default=False, required=False,
+                    help='use weighted criterion to handle class imbalance')
 sched_params = parser.add_argument_group('reduce on plateau learning rate scheduler parameters')
 sched_params.add_argument('--factor', type=float, default=0.1, required=False,
                           help='Factor by which the learning rate will be reduced')
@@ -159,11 +162,25 @@ def main_worker(gpu, ngpus_per_node, args):
     os.makedirs(network_dir, exist_ok=True)
 
     # compute number of classes
-    clas_to_idx = dict()
-    dirs = os.listdir(traindir)
-    dirs.extend(os.listdir(valdir))
-    dirs = set(dirs)
+    dirs = set()
+    for d in os.listdir(traindir):
+        if os.path.isdir(os.path.join(traindir, d)):
+            dirs.add(d)
+    for d in os.listdir(valdir):
+        if os.path.isdir(os.path.join(valdir, d)):
+            dirs.add(d)
     num_classes = len(dirs)
+
+    weights = None
+    if args.imbalanced:
+        nb_img_per_class = []
+        for c in os.listdir(traindir):
+            path = os.path.join(traindir,c)
+            if os.path.isdir(path):
+                n = len(os.listdir(path))
+                nb_img_per_class.append(n)
+        w = [1/math.log2(1+n) for n in nb_img_per_class]
+        weights = torch.Tensor(w)
 
     # create model
     if args.pretrained:
@@ -210,7 +227,7 @@ def main_worker(gpu, ngpus_per_node, args):
         model = torch.nn.DataParallel(model).cuda()
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+    criterion = nn.CrossEntropyLoss(weight=weights).cuda(args.gpu)
 
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
@@ -283,9 +300,11 @@ def main_worker(gpu, ngpus_per_node, args):
         num_workers=args.workers, pin_memory=True)
 
     if args.evaluate:
+        print('=> evaluating the model')
         validate(val_loader, model, criterion, args)
         return
 
+    print('=> training a', args.arch,'on', num_classes,'classes for', args.epochs,'epochs')
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
