@@ -16,6 +16,11 @@ parser.add_argument('--data', metavar='DIR',
                     help='path to dataset', required=True)
 # parser.add_argument("--trace", type=str, help="Exported TorchScript weights .pt", default=None)
 parser.add_argument("--snapshot", type=str, help="Input snapshot.pth.tar", default=None)
+parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
+                    choices=model_names,
+                    help='model architecture: ' +
+                        ' | '.join(model_names) +
+                        ' (default: resnet18)')
 # parser.add_argument('--crop-size', default=224, type=int,
 #                     help='Network input image size')
 
