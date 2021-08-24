@@ -11,6 +11,7 @@ def main():
     offline = parser.add_argument_group('offline', 'parameters who impact snoop preparation')
     offline.add_argument('--memory', type=int, default=48000, help='Memory (in Mb) to use while building the image index')
     offline.add_argument('--threads', type=int, default=24, help='Number of threads to use while building the image index')
+    offline.add_argument('--compression', type=int, default=None, help='descriptors compressed size')
     online = parser.add_argument_group('online', 'parameters who impact snoop at run time')
     online.add_argument('--gpu', type=int, default=[], nargs='*', help='Wich gpu to use at run time, if any')
     online.add_argument('--port', type=int, default=8080, help='which port to launch the snoop on')
@@ -24,7 +25,10 @@ def main():
         network = json.load(f)
 
     print('=> instantiating templates')
-    compression = network.get('feat_size', 1024)//2
+    if args.compression:
+        compression = args.compression
+    else:
+        compression = network.get('feat_size', 1024)//2
     crop_size = network.get('img_size', 224)
     tile_size = int(crop_size * 1.1 + 0.5)
     values = {
