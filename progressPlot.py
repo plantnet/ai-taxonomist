@@ -138,24 +138,20 @@ def main():
     val = process(log=args.log)
 
     # best epoch
-    best_epoch1 = 0
-    best_epoch5 = 0
-    best_acc1 = 0
-    best_acc5 = 0
-    k1 = 'Accuracy'
-    k2 = 'Acc@1'
-    for i in range(0, len(val[k1][k2]['x'])):
-        if val[k1][k2]['y'][i] > best_acc1:
-            best_epoch1 = val[k1][k2]['x'][i]
-            best_acc1 = val[k1][k2]['y'][i]
-    k2 = 'Acc@5'
-    for i in range(0, len(val[k1][k2]['x'])):
-        if val[k1][k2]['y'][i] > best_acc5:
-            best_epoch5 = val[k1][k2]['x'][i]
-            best_acc5 = val[k1][k2]['y'][i]
-
-    print('Best Acc@1', best_acc1, 'at epoch', best_epoch1)
-    print('Best Acc@5', best_acc5, 'at epoch', best_epoch5)
+    keys = ['Accuracy']
+    if args.train:
+        keys.append('Train')
+    for k1 in keys:
+        if k1 in val.keys():
+            for k2 in ['Acc@1','Acc@5' ]:
+                epoch = 0
+                acc = 0
+                if k2 in val[k1].keys() and len(val[k1][k2]):
+                    for i in range(0, len(val[k1][k2]['x'])):
+                        if val[k1][k2]['y'][i] > acc:
+                            epoch = val[k1][k2]['x'][i]
+                            acc = val[k1][k2]['y'][i]
+                    print(k1,'best', k2, acc, 'at epoch', int(epoch))
 
     # plot
     draw(val, args)
