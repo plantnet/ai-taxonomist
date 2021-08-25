@@ -2,6 +2,10 @@
 
 Automatically (ou presque) generate a Pl@ntNet like identification engine from a list of species
 
+-------------
+This is probably outdated, see https://gitlab.inria.fr/snoop/c4c-identify/-/wikis/home
+------------
+
 ## Requirements:
 * pytorch (https://pytorch.org/get-started/locally/)
 * gbif-dl (pip install gbif-dl)
