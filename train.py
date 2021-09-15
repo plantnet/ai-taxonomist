@@ -289,13 +289,18 @@ def main_worker(gpu, ngpus_per_node, args):
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
+    label_xform = LabelXForm()
+    val_dataset = datasets.ImageFolder(valdir,
+                                       transforms.Compose([
+                                           transforms.Resize(round(args.crop_size*1.1)),
+                                           transforms.CenterCrop(args.crop_size),
+                                           transforms.ToTensor(),
+                                           normalize,
+                                       ]),
+                                       target_transform=label_xform)
+    label_xform.configure(train_dataset.class_to_idx, val_dataset.class_to_idx)
     val_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(valdir, transforms.Compose([
-            transforms.Resize(round(args.crop_size*1.1)),
-            transforms.CenterCrop(args.crop_size),
-            transforms.ToTensor(),
-            normalize,
-        ])),
+        val_dataset,
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
 
@@ -335,6 +340,21 @@ def main_worker(gpu, ngpus_per_node, args):
             }, is_best, arch=args.arch, data_dir=network_dir)
 
 
+class LabelXForm:
+    def __init__(self):
+        self.idx = list()
+
+    def configure(self, train_idx: dict, val_idx: dict):
+        self.idx = [None] * len(val_idx)
+        for clas, idx in val_idx.items():
+            self.idx[idx] = train_idx[clas]
+
+    def __call__(self, *args, **kwargs):
+        if args[0] == len(self.idx):
+            print('Ça chie !', args[0], '>=', len(self.idx))
+        return self.idx[args[0]]
+
+
 def train(train_loader, model, criterion, optimizer, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
@@ -353,6 +373,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
+        # print('rank',args.rank, 'labels', target)
 
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
