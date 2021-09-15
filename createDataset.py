@@ -14,6 +14,7 @@ import random
 import hashlib
 import filetype
 
+
 def crawlNames(args: dict) -> list:
     species_ids = []
     other = []
@@ -40,7 +41,7 @@ def crawlNames(args: dict) -> list:
         print('Unable to get gbif info for name', n)
 
     if len(other):
-        output = os.path.join(args.data,'no_species.json')
+        output = os.path.join(args.data, 'no_species.json')
         print('some species names do not match any species, see', output, 'for details')
         with open(output, 'w') as f:
             json.dump(other, f)
@@ -51,7 +52,7 @@ def crawlNames(args: dict) -> list:
     return species_ids
 
 
-def downloadMedia(item: MediaData, root: str, random_subsets: dict ={'train': 0.95, 'val': 0.05},
+def downloadMedia(item: MediaData, root: str, random_subsets: dict = {'train': 0.95, 'val': 0.05},
                   is_valid_file: Optional[Callable[[bytes], bool]] = None,
                   overwrite: bool = False,
                   proxy: Optional[str] = None,
@@ -93,12 +94,12 @@ def downloadMedia(item: MediaData, root: str, random_subsets: dict ={'train': 0.
 
     proxies = None
     if proxy:
-        proxies={'http':proxy, 'https':proxy}
+        proxies = {'http': proxy, 'https': proxy}
     res = None
     try:
         res = requests.get(url, proxies=proxies)
     except Exception as e:
-        print('Failed to download', url,':', e)
+        print('Failed to download', url, ':', e)
         return
 
     # Check everything went well
@@ -122,7 +123,6 @@ def downloadMedia(item: MediaData, root: str, random_subsets: dict ={'train': 0.
         suffix = "." + kind.extension
         mime = kind.mime
 
-
     if is_valid_file is not None:
         if not is_valid_file(content):
             print(f"File check failed")
@@ -138,7 +138,6 @@ def downloadMedia(item: MediaData, root: str, random_subsets: dict ={'train': 0.
             fp.write(json.dumps(label))
 
 
-
 def main():
     parser = argparse.ArgumentParser(description='Cos4Cloud dataset creation')
     required = parser.add_argument_group('required argument')
@@ -150,15 +149,17 @@ def main():
                         help='do not crawl gbif, use the stored DATA/images.json file instead')
     parser.add_argument('--no-download', action='store_false', dest='download',
                         help='do not download images')
+    parser.add_argument('--no-fix', action='store_false', dest='fix',
+                        help='do not fix train/val split. Expect troubles !')
     parser.add_argument('--single-thread-dl', action='store_true', default=False)
     novice = parser.add_argument_group(title='novice usage', description='requires no previous knowledge of gbif')
     novice.add_argument('--names', type=argparse.FileType('r'),
                         help='text file with one species canonical name per line')
     intermediate = parser.add_argument_group(title='intermediate usage', description='requires some knowledge of gbif')
     intermediate.add_argument('--species', type=argparse.FileType('r'),
-                        help='json file listing gbif species ids')
+                              help='json file listing gbif species ids')
     intermediate.add_argument('--providers', type=argparse.FileType('r'),
-                        help='json file listing gbif providers ids')
+                              help='json file listing gbif providers ids')
     expert = parser.add_argument_group(title='expert', description='requires to fully understand gbif')
     expert.add_argument('--doi', type=str, help="a gbif's query doi")
 
@@ -168,6 +169,7 @@ def main():
 
     species_ids = []
     if args.crawl:
+        print('Building data generator')
         if not args.doi:
             if args.names:
                 if args.species:
@@ -176,7 +178,6 @@ def main():
                 species_ids = crawlNames(args)
             elif args.species:
                 species_ids = json.load(args.species)
-            #handle doi
 
             if args.providers:
                 providers = json.load(args.providers)
@@ -189,7 +190,7 @@ def main():
                                                        mediatype='StillImage',
                                                        one_media_per_occurrence=False,
                                                        verbose=args.verbose)
-        else: # use a precomputed gbif query from its doi
+        else:  # use a precomputed gbif query from its doi
             if args.names or args.species:
                 print('it does not make sens to provide both --doi and --name or --species arguments')
                 sys.exit(-1)
@@ -197,40 +198,53 @@ def main():
                                                         dwca_root_path=os.path.join(args.data, "dwcas"),
                                                         label="speciesKey",
                                                         mediatype='StillImage',
-                                                        one_media_per_occurrence=False,)
+                                                        one_media_per_occurrence=False, )
 
         print('Retrieving image metadata...')
         urls = []
         for i in data_generator:
             urls.append(i)
             if len(urls) % 500 == 0:
-                print(len(urls),'image metadata retrieved')
-        with open(args.data+"/images.json", 'w') as f:
+                print(len(urls), 'image metadata retrieved')
+        with open(args.data + "/images.json", 'w') as f:
             json.dump(urls, f)
         print(len(urls), 'image metadata saved in', args.data + "/images.json")
     else:
+        print('Crawl skipped, loading stored metadata')
         with open(args.data + "/images.json", 'r') as f:
             urls = json.load(f)
-        print(len(urls), 'image metadata loaded in', args.data+"/urls.json")
+        print(len(urls), 'image metadata loaded from', args.data + "/urls.json")
 
+    img_dir = os.path.join(args.data, 'img')
     if args.download:
-        img_dir = os.path.join(args.data, 'img')
         print("Downloading images to", img_dir)
         if args.single_thread_dl:
             cnt = 0
             for i in urls:
-                downloadMedia(i, root=img_dir, random_subsets={'train':0.95, 'val':0.05})
+                downloadMedia(i, root=img_dir, random_subsets={'train': 0.95, 'val': 0.05})
                 cnt += 1
                 if cnt % 500 == 0:
-                    print('\timage', cnt,'on', len(urls), 'downloaded')
+                    print('\timage', cnt, 'on', len(urls), 'downloaded')
         else:
-            gbif_dl.io.download(urls, root=img_dir, random_subsets={'train':0.95, 'val':0.05},
-                            nb_workers=6, retries=1, verbose=args.verbose)
+            gbif_dl.io.download(urls, root=img_dir, random_subsets={'train': 0.95, 'val': 0.05},
+                                nb_workers=10, retries=1, loglevel="INFO")
 
         print('Images downloaded')
     else:
         print('Download skipped')
 
+    if args.fix:
+        train_dir = os.path.join(img_dir, 'train')
+        train_classes = os.listdir(train_dir)
+        val_dir = os.path.join(img_dir, 'val')
+        val_classes = os.listdir(val_dir)
+        for c in val_classes:
+            if not c in train_classes:
+                print('class', c, 'is only in val, moving it to train')
+                os.rename(os.path.join(val_dir, c), os.path.join(train_dir, c))
+    else:
+        print('train/val set fix skipped')
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()
