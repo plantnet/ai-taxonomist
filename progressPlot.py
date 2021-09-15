@@ -48,14 +48,14 @@ def process(log):
             words = line.split(' ')
             epoch = int(words[1])
             val = float(words[2])
-            values['LearningRate'].setdefault('x', []).append(epoch)
+            values['LearningRate'].setdefault('x', []).append(epoch+1)
             values['LearningRate'].setdefault('y', []).append(val)
         elif line.startswith(' * '):
             words = line.split(' ')
             for i in range(2, len(words), 2):
                 name = words[i]
                 val = float(words[i+1])
-                values['Accuracy'].setdefault(name, {}).setdefault('x', []).append(epoch)
+                values['Accuracy'].setdefault(name, {}).setdefault('x', []).append(epoch+1)
                 values['Accuracy'].setdefault(name, {}).setdefault('y', []).append(val)
         # else:
         #     print(line)
@@ -66,7 +66,7 @@ def draw(val, args):
 
     ax1.set_xlabel('epochs')
 
-    plot.title('C4C progress')
+    plot.title('C4C: '+args.log.name)
     ax2 = ax1.twinx()
     colors = [
         "#000000", "#ff0000", "#00ff00", "#0000ff", "#a00000", "#00a000",
