@@ -149,6 +149,7 @@ def main():
                         help='do not crawl gbif, use the stored DATA/images.json file instead')
     parser.add_argument('--no-download', action='store_false', dest='download',
                         help='do not download images')
+    parser.add_argument('--workers', type=int, metavar='N', default=10, help='number of // downloads')
     parser.add_argument('--no-fix', action='store_false', dest='fix',
                         help='do not fix train/val split. Expect troubles !')
     parser.add_argument('--single-thread-dl', action='store_true', default=False)
@@ -227,13 +228,30 @@ def main():
                     print('\timage', cnt, 'on', len(urls), 'downloaded')
         else:
             gbif_dl.io.download(urls, root=img_dir, random_subsets={'train': 0.95, 'val': 0.05},
-                                nb_workers=10, retries=1, loglevel="INFO")
+                                nb_workers=args.workers, retries=1, loglevel="INFO")
 
         print('Images downloaded')
     else:
         print('Download skipped')
 
     if args.fix:
+        # remove empty image files
+        for root, dirs, files in os.walk(img_dir):
+            for f in files:
+                path = os.path.join(root, f)
+                if os.path.getsize(path) == 0:
+                    os.remove(path)
+                    print('Removed empty file', path)
+        # remove empty train/val directory
+        for sub in ['train', 'val']:
+            for d in os.listdir(os.path.join(img_dir, sub)):
+                try:
+                    dd = os.path.join(img_dir, sub, d)
+                    os.rmdir(dd)
+                    print('Removed empty', sub, 'class', d)
+                except OSError:
+                    pass
+        # avoid to have some classes illustrated only in the validation set
         train_dir = os.path.join(img_dir, 'train')
         train_classes = os.listdir(train_dir)
         val_dir = os.path.join(img_dir, 'val')
