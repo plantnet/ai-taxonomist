@@ -152,6 +152,9 @@ def main():
     parser.add_argument('--workers', type=int, metavar='N', default=10, help='number of // downloads')
     parser.add_argument('--no-fix', action='store_false', dest='fix',
                         help='do not fix train/val split. Expect troubles !')
+    parser.add_argument('--check-images', action='store_true', dest='check',
+                        help='check that images are actual images, takes a while but prevents troubles during train')
+
     parser.add_argument('--single-thread-dl', action='store_true', default=False)
     novice = parser.add_argument_group(title='novice usage', description='requires no previous knowledge of gbif')
     novice.add_argument('--names', type=argparse.FileType('r'),
@@ -234,6 +237,9 @@ def main():
     else:
         print('Download skipped')
 
+    if args.check:
+        from PIL import Image
+
     if args.fix:
         # remove empty image files
         for root, dirs, files in os.walk(img_dir):
@@ -242,6 +248,14 @@ def main():
                 if os.path.getsize(path) == 0:
                     os.remove(path)
                     print('Removed empty file', path)
+                elif args.check:
+                    try:
+                        img = Image.open(path)
+                        img.load()
+                    except:
+                        os.remove(path)
+                        print('Removed buggy file', path)
+
         # remove empty train/val directory
         for sub in ['train', 'val']:
             for d in os.listdir(os.path.join(img_dir, sub)):
