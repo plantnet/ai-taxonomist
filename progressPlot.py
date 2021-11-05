@@ -19,44 +19,56 @@ def process(log):
             train_max_step = int(match.group('max_step'))
             x = float(epoch) + float(step) / float(train_max_step)
             for i in range(1, len(words)):
-                match = re.match(
-                    r'(?P<name>\S+) +(?P<val>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?) +'
-                    r'\( *(?P<avg>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)\)',
-                    words[i])
-                name = match.group('name')
-                val = float(match.group('val'))
-                avg = float(match.group('avg'))
-                values['Train'].setdefault(name, {}).setdefault('x', []).append(x)
-                values['Train'].setdefault(name, {}).setdefault('y', []).append(avg)
+                try:
+                    match = re.match(
+                        r'(?P<name>\S+) +(?P<val>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?) +'
+                        r'\( *(?P<avg>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)\)',
+                        words[i])
+                    name = match.group('name')
+                    val = float(match.group('val'))
+                    avg = float(match.group('avg'))
+                    values['Train'].setdefault(name, {}).setdefault('x', []).append(x)
+                    values['Train'].setdefault(name, {}).setdefault('y', []).append(avg)
+                except:
+                    pass
         elif line.startswith('Test:'):
-            words = line.split('\t')
-            match = re.match(r'Test: \[ *(?P<step>\d+)/(?P<max_step>\d+)\]', words[0])
-            step = int(match.group('step'))
-            test_max_step = int(match.group('max_step'))
-            x = float(epoch) + float(step) / float(test_max_step)
-            for i in range(1, len(words)):
-                match = re.match(
-                    r'(?P<name>\S+) +(?P<val>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?) +'
-                    r'\( *(?P<avg>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)\)',
-                    words[i])
-                name = match.group('name')
-                val = float(match.group('val'))
-                avg = float(match.group('avg'))
-                values['Test'].setdefault(name, {}).setdefault('x', []).append(x)
-                values['Test'].setdefault(name, {}).setdefault('y', []).append(avg)
+            try:
+                words = line.split('\t')
+                match = re.match(r'Test: \[ *(?P<step>\d+)/(?P<max_step>\d+)\]', words[0])
+                step = int(match.group('step'))
+                test_max_step = int(match.group('max_step'))
+                x = float(epoch) + float(step) / float(test_max_step)
+                for i in range(1, len(words)):
+                    match = re.match(
+                        r'(?P<name>\S+) +(?P<val>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?) +'
+                        r'\( *(?P<avg>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)\)',
+                        words[i])
+                    name = match.group('name')
+                    val = float(match.group('val'))
+                    avg = float(match.group('avg'))
+                    values['Test'].setdefault(name, {}).setdefault('x', []).append(x)
+                    values['Test'].setdefault(name, {}).setdefault('y', []).append(avg)
+            except:
+                pass
         elif line.startswith('LearningRate:'):
-            words = line.split(' ')
-            epoch = int(words[1])
-            val = float(words[2])
-            values['LearningRate'].setdefault('x', []).append(epoch+1)
-            values['LearningRate'].setdefault('y', []).append(val)
+            try:
+                words = line.split(' ')
+                epoch = int(words[1])
+                val = float(words[2])
+                values['LearningRate'].setdefault('x', []).append(epoch+1)
+                values['LearningRate'].setdefault('y', []).append(val)
+            except:
+                pass
         elif line.startswith(' * '):
-            words = line.split(' ')
-            for i in range(2, len(words), 2):
-                name = words[i]
-                val = float(words[i+1])
-                values['Accuracy'].setdefault(name, {}).setdefault('x', []).append(epoch+1)
-                values['Accuracy'].setdefault(name, {}).setdefault('y', []).append(val)
+            try:
+                words = line.split(' ')
+                for i in range(2, len(words), 2):
+                    name = words[i]
+                    val = float(words[i+1])
+                    values['Accuracy'].setdefault(name, {}).setdefault('x', []).append(epoch+1)
+                    values['Accuracy'].setdefault(name, {}).setdefault('y', []).append(val)
+            except:
+                pass
         # else:
         #     print(line)
     return values
