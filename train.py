@@ -158,7 +158,9 @@ def main_worker(gpu, ngpus_per_node, args):
     img_dir  = os.path.join(data_dir, 'img')
     traindir = os.path.join(img_dir, 'train')
     valdir = os.path.join(img_dir, 'val')
-    network_dir = os.path.join(data_dir, 'network')
+
+    online_dir = os.path.join('ai-taxonomist')
+    network_dir = os.path.join(online_dir, 'network')
     os.makedirs(network_dir, exist_ok=True)
 
     # compute number of classes
@@ -310,6 +312,7 @@ def main_worker(gpu, ngpus_per_node, args):
         return
 
     print('=> training a', args.arch,'on', num_classes,'classes for', args.epochs,'epochs')
+    args.num_classes = num_classes
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -384,10 +387,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         output = model(images)
         if isinstance(output, models.InceptionOutputs):
             loss = criterion(output.logits, target) + 0.4 * criterion(output.aux_logits, target)
-            acc1, acc5 = accuracy(output.logits, target, topk=(1, 5))
+            acc1, acc5 = accuracy(output.logits, target, topk=(1, min(5, args.num_classes)))
         else:
             loss = criterion(output, target)
-            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            acc1, acc5 = accuracy(output, target, topk=(1, min(5, args.num_classes)))
 
         # record loss
         losses.update(loss.item(), images.size(0))
@@ -433,7 +436,7 @@ def validate(val_loader, model, criterion, args):
             loss = criterion(output, target)
 
             # measure accuracy and record loss
-            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            acc1, acc5 = accuracy(output, target, topk=(1, min(5, args.num_classes)))
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0], images.size(0))
             top5.update(acc5[0], images.size(0))

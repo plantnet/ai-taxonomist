@@ -2,6 +2,7 @@
     "server": {
         "port": @PORT@,
         "nb_main_threads": @MAIN_THREAD@,
+        "gbif_doi": @DOI@,
         "proxy": "@HTTP_PROXY@"
     },
     "snoop": {

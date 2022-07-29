@@ -16,22 +16,33 @@ def main():
     args = parser.parse_args()
 
     if not args.images:
-        args.images = os.path.join(args.data, 'images.json')
+        args.images = os.path.join(args.data, 'temporary', 'images.json')
 
-    gt_path = os.path.join(args.data, 'GT')
+    taxonomist_dir = os.path.join(args.data, 'ai-taxonomist')
+    gt_path = os.path.join(taxonomist_dir, 'GT')
     os.makedirs(gt_path, exist_ok=True)
 
     id2class = {}
     species_id = []
     print('=> loading network mapping')
-    with open(os.path.join(args.data,'network', 'mapping.json')) as f:
+    with open(os.path.join(taxonomist_dir, 'network', 'mapping.json')) as f:
         id2class = json.load(f)
 
     print('=> retrieving names from gbif and building class mapping')
     mapping = [{} for i in range(len(id2class))]
-    for k,v in id2class.items():
-        name_usage = pygbif.species.name_usage(key=k, data='name')
-        mapping[v] = {'name': name_usage.get(args.name_type, None), 'species_id':k}
+    for k, v in id2class.items():
+        # name_usage = pygbif.species.name_usage(key=k, data='name')
+        name_usage = pygbif.species.name_usage(key=k)
+        mapping[v] = {
+            'name': name_usage.get(args.name_type, None),
+            'species_id': k,
+            'rank': name_usage.get('rank', None),
+            'authorship': name_usage.get('authorship', None),
+            'vernacularName': name_usage.get('vernacularName', None),
+            'species': name_usage.get('species', None),
+            'genus': name_usage.get('genus', None),
+            'family': name_usage.get('family', None)
+        }
     with open(os.path.join(gt_path, 'classes.json'), 'w') as f:
         json.dump(mapping, f)
 
@@ -45,12 +56,12 @@ def main():
         species_id = i.get('label', None)
         if basename and species_id:
             class_id = id2class.get(species_id, -1)
-            if class_id>0:
+            if class_id > 0:
                 images[basename] = i
                 images[basename]['class_id'] = class_id
     with open(os.path.join(gt_path, 'images.json'), 'w') as f:
         json.dump(images, f)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()

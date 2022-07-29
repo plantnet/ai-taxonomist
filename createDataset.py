@@ -15,7 +15,7 @@ import hashlib
 import filetype
 
 
-def crawlNames(args: dict) -> list:
+def crawlNames(args: dict, temp_data: str) -> list:
     species_ids = []
     other = []
     cnt = 0
@@ -41,12 +41,12 @@ def crawlNames(args: dict) -> list:
         print('Unable to get gbif info for name', n)
 
     if len(other):
-        output = os.path.join(args.data, 'no_species.json')
+        output = os.path.join(temp_data, 'no_species.json')
         print('some species names do not match any species, see', output, 'for details')
         with open(output, 'w') as f:
             json.dump(other, f)
 
-    with open(os.path.join(args.data, 'species_ids.json'), 'w') as f:
+    with open(os.path.join(temp_data, 'species_ids.json'), 'w') as f:
         json.dump(species_ids, f)
 
     return species_ids
@@ -169,19 +169,42 @@ def main():
 
     args = parser.parse_args()
 
-    os.makedirs(args.data, exist_ok=True)
+    train_data = args.data
+    temp_data = os.path.join(args.data, 'temporary')
+    for d in [train_data, temp_data]:
+        os.makedirs(d, exist_ok=True)
 
     species_ids = []
+    images_file = os.path.join(temp_data, "images.json")
     if args.crawl:
         print('Building data generator')
-        if not args.doi:
+        if args.doi:
+            # use a precomputed gbif query from its doi
+            if args.names or args.species:
+                print('it does not make sense to provide both --doi and --name or --species arguments')
+                sys.exit(-1)
+            # save doi for online usage
+            doi = {'gbif_doi': args.doi}
+            with open(os.path.join(temp_data, 'doi.json'), 'w') as f:
+                json.dump(doi, f)
+
+            data_generator = gbif_dl.dwca.generate_urls(args.doi,
+                                                        dwca_root_path=os.path.join(temp_data, "dwcas"),
+                                                        label="speciesKey",
+                                                        mediatype='StillImage',
+                                                        one_media_per_occurrence=False, )
+        else:
+            # retrieve media from a name or a species list and an optional providers list
             if args.names:
                 if args.species:
                     print('it does not make sens to provide both --name and --species arguments')
                     sys.exit(-1)
-                species_ids = crawlNames(args)
+                species_ids = crawlNames(args, temp_data)
             elif args.species:
                 species_ids = json.load(args.species)
+            else:
+                print('no doi, no species, no names => nothing to do!')
+                sys.exit(-1)
 
             if args.providers:
                 providers = json.load(args.providers)
@@ -194,15 +217,6 @@ def main():
                                                        mediatype='StillImage',
                                                        one_media_per_occurrence=False,
                                                        verbose=args.verbose)
-        else:  # use a precomputed gbif query from its doi
-            if args.names or args.species:
-                print('it does not make sens to provide both --doi and --name or --species arguments')
-                sys.exit(-1)
-            data_generator = gbif_dl.dwca.generate_urls(args.doi,
-                                                        dwca_root_path=os.path.join(args.data, "dwcas"),
-                                                        label="speciesKey",
-                                                        mediatype='StillImage',
-                                                        one_media_per_occurrence=False, )
 
         print('Retrieving image metadata...')
         urls = []
@@ -210,16 +224,16 @@ def main():
             urls.append(i)
             if len(urls) % 500 == 0:
                 print(len(urls), 'image metadata retrieved')
-        with open(args.data + "/images.json", 'w') as f:
+        with open(images_file, 'w') as f:
             json.dump(urls, f)
-        print(len(urls), 'image metadata saved in', args.data + "/images.json")
+        print(len(urls), 'image metadata saved in', images_file)
     else:
         print('Crawl skipped, loading stored metadata')
-        with open(args.data + "/images.json", 'r') as f:
+        with open(images_file, 'r') as f:
             urls = json.load(f)
-        print(len(urls), 'image metadata loaded from', args.data + "/urls.json")
+        print(len(urls), 'image metadata loaded from', images_file)
 
-    img_dir = os.path.join(args.data, 'img')
+    img_dir = os.path.join(train_data, 'img')
     if args.download:
         print("Downloading images to", img_dir)
         if args.single_thread_dl:

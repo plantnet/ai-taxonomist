@@ -4,13 +4,17 @@ import os
 import sys
 import glob
 
+
 def main():
-    parser = argparse.ArgumentParser(description='Cos4Cloud use gbif api to convert canonical names to gbif species ids')
+    parser = argparse.ArgumentParser(
+        description='Cos4Cloud use gbif api to convert canonical names to gbif species ids')
     parser.add_argument('-d', '--data',
                         help='output directory', required=True)
     offline = parser.add_argument_group('offline', 'parameters who impact snoop preparation')
-    offline.add_argument('--memory', type=int, default=48000, help='Memory (in Mb) to use while building the image index')
-    offline.add_argument('--threads', type=int, default=24, help='Number of threads to use while building the image index')
+    offline.add_argument('--memory', type=int, default=48000,
+                         help='Memory (in Mb) to use while building the image index')
+    offline.add_argument('--threads', type=int, default=24,
+                         help='Number of threads to use while building the image index')
     offline.add_argument('--compression', type=int, default=None, help='descriptors compressed size')
     online = parser.add_argument_group('online', 'parameters who impact snoop at run time')
     online.add_argument('--gpu', type=int, default=[], nargs='*', help='Wich gpu to use at run time, if any')
@@ -20,28 +24,38 @@ def main():
 
     args = parser.parse_args()
 
+    try:
+        with open(os.path.join(args.data, 'temporary', 'doi.json'), 'r') as f:
+            doi = json.load(f)
+    except OSError:
+        doi = None
+
+    online_dir = os.path.join(args.data, 'ai-taxonomist')
+
     print('=> loading network mapping')
-    with open(os.path.join(args.data, 'network', 'network.json')) as f:
+    with open(os.path.join(online_dir, 'network', 'network.json')) as f:
         network = json.load(f)
 
     print('=> instantiating templates')
     if args.compression:
         compression = args.compression
     else:
-        compression = network.get('feat_size', 1024)//2
+        compression = network.get('feat_size', 1024) // 2
     crop_size = network.get('img_size', 224)
     tile_size = int(crop_size * 1.1 + 0.5)
     values = {
+        # DOI
+        '@DOI@': '"'+doi.get('gbif_doi', '')+'"' if doi else '""',
         # Image Index
         '@COMPRESSION@': compression,
-        '@EMBEDDER_SAMPLES@': compression*100,
+        '@EMBEDDER_SAMPLES@': compression * 100,
         '@MEMORY@': args.memory,
         '@THREADS@': args.threads,
         # Descriptors
         '@GPU@': 'true' if len(args.gpu) else 'false',
         '@TILE_SIZE@': tile_size,
         '@CROP_SIZE@': crop_size,
-        '@NETWORK@': network.get('network', os.path.join('network','network.pt')),
+        '@NETWORK@': network.get('network', os.path.join('network', 'network.pt')),
         '@NUM_CLASSES@': network.get('num_classes', 1000),
         '@FEATURES@': network.get('features', 'features'),
         '@FEAT_SIZE@': network.get('feat_size', 1024),
@@ -54,7 +68,7 @@ def main():
         '@GPU_ID@': args.gpu
     }
 
-    config_dir = os.path.join(args.data, 'Config')
+    config_dir = os.path.join(online_dir, 'Config')
     os.makedirs(config_dir, exist_ok=True)
     template_dir = os.path.join(os.path.dirname(sys.argv[0]), 'Config')
 
@@ -63,10 +77,10 @@ def main():
         with open(tpl, 'r') as f:
             with open(cfg, 'w') as out:
                 for line in f:
-                    for k,v in values.items():
-                        line = line.replace(k,str(v))
+                    for k, v in values.items():
+                        line = line.replace(k, str(v))
                     out.write(line)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()

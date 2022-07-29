@@ -28,8 +28,9 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
 def main():
     args = parser.parse_args()
 
+    network_dir = os.path.join(args.data, 'ai-taxonomist', 'network')
     if not args.snapshot:
-        args.snapshot = os.path.join(args.data, 'network', args.arch+'_best.pth.tar')
+        args.snapshot = os.path.join(network_dir, args.arch+'_best.pth.tar')
 
     # load snapshot
     if not os.path.isfile(args.snapshot):
@@ -41,12 +42,12 @@ def main():
     checkpoint = torch.load(args.snapshot, map_location=device)
     args.arch = checkpoint['arch']
     trace_file = os.path.join('network', args.arch+'.pt')
-    args.trace = os.path.join(args.data, trace_file)
+    args.trace = os.path.join(network_dir, args.arch+'.pt')
     args.num_classes = checkpoint['num_classes']
     args.size = checkpoint['crop_size']
     # get rid of ddp
     state_dict = dict()
-    for k,v in checkpoint['state_dict'].items():
+    for k, v in checkpoint['state_dict'].items():
         if k.startswith('module.'):
             state_dict[k[len('module.'):]] = v
         else:
@@ -70,9 +71,10 @@ def main():
     traced = torch.jit.trace_module(model, {'features': input, 'logits': features})
     print("=> saving torchscript model '{}'".format(args.trace))
     traced.save(args.trace)
-    with open(os.path.join(args.data, 'network', 'network.json'), 'w') as f:
-        json.dump({'network':trace_file, 'features':'features', 'logits':'logits', 'feat_size': model.feature_size,
+    with open(os.path.join(network_dir, 'network.json'), 'w') as f:
+        json.dump({'network': trace_file, 'features': 'features', 'logits': 'logits', 'feat_size': model.feature_size,
                    'num_classes': args.num_classes, 'arch':args.arch, 'img_size':args.size}, f)
+
 
 if __name__ == '__main__':
     main()
