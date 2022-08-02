@@ -92,7 +92,7 @@ def main():
         action="store_const",
         const=2,
         default=1,
-        help="set verbosity level",
+        help="augment verbosity level",
     )
     crawl = parser.add_argument_group(title="crawl", description="control GBIF crawl")
     crawl_xor = crawl.add_mutually_exclusive_group(required=True)
@@ -152,7 +152,7 @@ def main():
     split = parser.add_argument_group(
         title="split", description="control the train/val split"
     )
-    dl.add_argument(
+    split.add_argument(
         "--no-split",
         action="store_false",
         dest="split",
