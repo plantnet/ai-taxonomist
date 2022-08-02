@@ -3,7 +3,6 @@ Create a dataset for ai-taxonomist
 Use --help!
 """
 import shutil
-import sys
 import typing
 import argparse
 import json

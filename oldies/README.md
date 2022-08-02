@@ -1,24 +1,102 @@
-# c4c-identify
+# ai-taxonomist
 
-Automatically (ou presque) generate a Pl@ntNet like identification engine from a list of species
+(almost) Automatically generate a Pl@ntNet like identification engine from a GBIF occurrences Darwin Core Archive
 
--------------
-This is probably outdated, see https://gitlab.inria.fr/snoop/c4c-identify/-/wikis/home
-------------
-
-## Requirements:
-* pytorch (https://pytorch.org/get-started/locally/)
-* gbif-dl (pip install gbif-dl)
-* scipy (pip install scipy)
-* a working docker (>19.03) and a _Snoop_ docker image
-    * registry.gitlab.inria.fr/snoop/c4c-identify/cpu:latest to run on cpu only
-    * registry.gitlab.inria.fr/snoop/c4c-identify/cu111:latest to run on cuda (at least 11.1) gpus 
-        * nvidia-docker is also required in this case
-
+## Required environment
+* python 3.9
+* docker >=19.03.12
+* Cuda capable GPUs
+  * cuda >=11.0,  
+  * nvidia-docker >=1.0.1 (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+* github.com access
+* github docker register access
 
  > `--help` is your friend !
 
+## Offline preparation
+### Python phase
+#### Requirements:
+* pytorch (https://pytorch.org/get-started/locally/)
+* gbif-dl (pip install gbif-dl)
+* scipy (pip install scipy)
+* img2dataset (pip install img2dataset)
+
+#### Dataset creation
+
+```commandline
+python createDataset.py --data /path/to/dataset --doi prefix/suffix
+```
+Create a dataset in /path/to/dataset (must be writeable) base on the given prefix/suffix GBIF occurrences Darwin Core Archive doi
+
+**Warning!** It will probably take a while, use several GB of disk and network to
+  * retrieve the Darwin Core Archive and eventually crawl GBIF on the targeted species 
+  * download and store in /path/to/dataset/img all the images referenced by the doi
+  * split the downloaded images into a train and a validation set
+
+
+Useful options:
+* `--no-crawl`: use the stored dwca instead of downloading it
+* `--no-download`: use the stored images instead of downloading them
+* `--no-split`: keep all the downloaded images in place instead of creating a train/val split
+
+To see all available options: ```python createDataset.py --help```
+
+#### Neural network training
+On a multi gpu computer:
+```commandline
+python -u train.py --data /path/to/dataset --arch resnet18 --lr 0.01 --batch-size 256 \
+  --epoch 50 --patience 4 --print 50 --workers 4 --pretrained --imbalanced \
+  --dist-url tcp://127.0.0.1:9123 --dist-backend nccl --multiprocessing-distributed --world-size 1 --rank 0 \
+  |& tee torch_resnet18.log
+python scriptModel.py --data /path/to/dataset --arch resnet18
+```
+**Warning!** 
+* It will also probably take a while
+* Do not forget to script the trained model with `scriptModel.py`
+
+Optionally, you might plot the training progress (and adjust your parameters) with `progressPlot.py`:
+```commandline
+python progressPlot.py --train torch_resnet18.log
+```
+
+#### Build Snoop's configuration files
+```commandline
+python createConfig.py --data /path/to/dataset
+python createGT.py --data /path/to/dataset
+```
+
+### Docker phase
+#### Requirements:
+* docker >=19.03.12
+* optionally nvidia-docker >=1.0.1 to run on GPU (recommended with large dataset)
+* the latest ai-taxonomist image
+  * CPU: 
+  * GPU:
+
+####  Setup
+As executable are called through docker, it is easier do define the `DOCKER_COMMAND` as follow:
+
+
+-----------
+TO BE CONTINUED
+
+------------
+
 ## Examples
+
+```bash
+python createDataset.py --data /path/to/dataset --doi 10.15468/dl.epcnam
+```
+Create a dataset in /path/to/dataset (must be writeable) base on the given GBIF occurrences Darwin Core Archive doi
+
+**Warning!** It will take a while, use several GB of disk and network to
+  * crawl GBIF on the `Anura` order and retrieve information about ~ 3k frog species 
+  * download more than half a million images to your hard drive
+  * split the downloaded images into a train and a validation set
+
+
+
+
 The `frogs` directory contains required data to build a c3c-identification engine on the 'Rana' genus (frogs).
 It is declined accordingly to how familiar you are with `gbif`
 * novice: no prior knowledge of gbif required
