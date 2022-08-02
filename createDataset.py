@@ -250,6 +250,26 @@ def main():
             print("Splitting images into train/val sets")
         per_label = {}
         img_cnt = 0
+        # allow rerun split by preloading per_label with existing train/val images if any
+        train_dir = os.path.join(img_dir, "train")
+        val_dir = os.path.join(img_dir, "val")
+        for subdir in [train_dir, val_dir]:
+            if os.path.isdir(subdir):
+                for x in os.walk(subdir):
+                    d = x[0]
+                    label = os.path.basename(d)
+                    for file in x[2]:
+                        basename = os.path.splitext(file)[0]
+                        per_label.setdefault(label, dict())
+                        if basename not in per_label[label].keys():
+                            per_label[label][basename] = {"key": basename, "dir": d}
+                            img_cnt += 1
+                        else:
+                            # found the same image in train and val set, should not happen
+                            print("WARNING: removing duplicate image", basename)
+                            os.remove(os.path.join(d, file))
+
+        # add all images to per_label
         for x in os.walk(all_img_dir):
             d = x[0]
             for file in x[2]:
@@ -262,34 +282,44 @@ def main():
                         key = info.get("key", None)
                         basename = info.get("basename", None)
                         if status == "success" and label and key and basename:
-                            per_label.setdefault(label, []).append(
-                                {"basename": basename, "key": key, "dir": d}
-                            )
-                            img_cnt += 1
+                            label = str(label)
+                            key = str(key)
+                            basename = str(basename)
+                            per_label.setdefault(label, dict())
+                            if basename not in per_label[label].keys():
+                                per_label[label][basename] = {"key": key, "dir": d}
+                                img_cnt += 1
+                            elif args.verbose > 1:
+                                print("duplicate image", basename, "ignored")
         if args.verbose:
             print("Found", img_cnt, "images illustrating", len(per_label), "species")
         train_cnt = 0
         val_cnt = 0
-        for label, images in per_label.items():
-            train_dir = os.path.join(img_dir, "train", str(label))
-            val_dir = os.path.join(img_dir, "val", str(label))
-            for d in [train_dir, val_dir]:
+        for label, img_dict in per_label.items():
+            this_train_dir = os.path.join(train_dir, str(label))
+            this_val_dir = os.path.join(val_dir, str(label))
+            for d in [this_train_dir, this_val_dir]:
                 os.makedirs(d, exist_ok=True)
+            images = [
+                {"basename": basename, "key": img["key"], "dir": img["dir"]}
+                for basename, img in img_dict.items()
+            ]
             random.shuffle(images)
             n = len(images)
             nb_val = int(n * args.percent + 0.5)
-            for i in images[:nb_val]:
-                os.rename(
-                    os.path.join(i["dir"], i["key"] + ".jpg"),
-                    os.path.join(val_dir, i["basename"] + ".jpg"),
+            for idx, img in enumerate(images):
+                src = os.path.join(img["dir"], img["key"] + ".jpg")
+                dest = os.path.join(
+                    this_val_dir if idx < nb_val else this_train_dir,
+                    img["basename"] + ".jpg",
                 )
-                val_cnt += 1
-            for i in images[nb_val:]:
-                os.rename(
-                    os.path.join(i["dir"], i["key"] + ".jpg"),
-                    os.path.join(train_dir, i["basename"] + ".jpg"),
+                if src != dest:
+                    os.rename(src, dest)
+                val_cnt, train_cnt = (
+                    (val_cnt + 1, train_cnt)
+                    if idx < nb_val
+                    else (val_cnt, train_cnt + 1)
                 )
-                train_cnt += 1
         shutil.rmtree(all_img_dir, ignore_errors=True)
         if args.verbose:
             print(
