@@ -2,6 +2,9 @@
 
 (almost) Automatically generate a Pl@ntNet like identification engine from a GBIF occurrences Darwin Core Archive
 
+By using this tool, the user agree to the GBIF data user agreement (https://www.gbif.org/terms/data-user)
+
+
 ## Required environment
 * python 3.9
 * docker >=19.03.12
@@ -135,3 +138,13 @@ Main routes are
 * (GET)  `/help` list available routes and their usage
 * (GET)	 `/identify?image=image_uri[&image=image_uri...]` identify the given image(s)
 * (POST) `/identify` identify the image(s) sent as 'image:' in the message body
+
+### User Interface
+The `ai-taxonomist` REST service is compatible with the `ai-taxonomist-webcomponent` (https://github.com/plantnet/ai-taxonomist-webcomponent)
+
+## Example
+To illustrate the usage of `ai-taxonomist`, we built a DWCA from an occurrence search on GBIF on the order `Anura`. Following the above steps with `--doi 10.15468/dl.epcnam` produced a dataset with 3k frog species illustrated by 500k images. 
+
+> GBIF.org (07 October 2021) GBIF Occurrence Download  https://doi.org/10.15468/dl.epcnam
+
+This example is running on https://c4c.inria.fr/demo/ as a demonstration of `ai-taxonomist` and its web component 
