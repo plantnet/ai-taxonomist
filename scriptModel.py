@@ -6,8 +6,6 @@ import json
 import os
 import sys
 import torchvision.models as models
-import torch.nn as nn
-import torch
 from models.tools import *
 
 model_names = sorted(

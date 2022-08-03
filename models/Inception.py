@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 
+
 class TraceInceptionV3(nn.Module):
     def __init__(self, model):
         super(TraceInceptionV3, self).__init__()
@@ -63,4 +64,3 @@ class TraceInceptionV3(nn.Module):
         x = self.features(x)
         x = self.logits(x)
         return x
-

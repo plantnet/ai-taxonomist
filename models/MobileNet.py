@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 
+
 class TraceMobileNetV2(nn.Module):
     def __init__(self, model):
         super(TraceMobileNetV2, self).__init__()
@@ -20,6 +21,7 @@ class TraceMobileNetV2(nn.Module):
         x = self.features(x)
         x = self.logits(x)
         return x
+
 
 class TraceMobileNetV3(nn.Module):
     def __init__(self, model):

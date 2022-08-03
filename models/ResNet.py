@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 
+
 class TraceResNet(nn.Module):
     def __init__(self, model):
         super(TraceResNet, self).__init__()

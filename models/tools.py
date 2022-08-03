@@ -1,3 +1,6 @@
+"""
+Helpers to allow to extract features from the given models
+"""
 from .MobileNet import *
 from .ResNet import *
 from .Inception import *

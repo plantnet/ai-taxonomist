@@ -11,8 +11,8 @@
 * github.com access
 * github docker register access
 
- > `--help` is your friend !
-
+ > `--help` is your friend !  
+Every command listed bellow answer the --help flag, use it!
 ## Offline preparation
 ### Python phase
 #### Requirements:
@@ -70,13 +70,29 @@ python createGT.py --data /path/to/dataset
 * docker >=19.03.12
 * optionally nvidia-docker >=1.0.1 to run on GPU (recommended with large dataset)
 * the latest ai-taxonomist image
-  * CPU: 
-  * GPU:
 
 ####  Setup
-As executable are called through docker, it is easier do define the `DOCKER_COMMAND` as follow:
+As executable are called through docker, it is easier do define the `DOCKER_COMMAND` as follows:
+  * CPU: 
+```bash
+export DOCKER_IMAGE="ghcr.io/plantnet/ai-taxonomist/cpu:latest"
+export DOCKER_COMMAND="docker run -it --rm -v /path/to/data:/data --name ait-builder $DOCKER_IMAGE" 
+```
+  * GPU:
+```bash
+export DOCKER_IMAGE="ghcr.io/plantnet/ai-taxonomist/cu113:latest"
+export DOCKER_COMMAND="docker run -it --rm --gpus all -v /path/to/data:/data --name ait-builder $DOCKER_IMAGE" 
+```
 
-
+### Build the identification engine
+```bash
+$DOCKER_COMMAND /opt/snoop/bin/snoopCorpus --root /data/ai-taxonomist --corpus c4c --recurse --input /data/img
+$DOCKER_COMMAND /opt/snoop/bin/snoopExtractor --root /data/ai-taxonomist --corpus c4c --feature Feature \
+    --doc_plugin Config/doc_ocv.json --desc_plugin Config/desc_torchscript.json \
+    --min_num_desc 1 --nb_lot_per_thread 100 --nb_threads 10
+$DOCKER_COMMAND /opt/snoop/bin/snoopDatabase --root /data/ai-taxonomist --corpus c4c --feature Feature \
+    --database Index --db_plugin Config/db_pmh.json
+```
 -----------
 TO BE CONTINUED
 

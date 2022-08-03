@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
+
 class TraceDenseNet(nn.Module):
     def __init__(self, model):
         super(TraceDenseNet, self).__init__()
