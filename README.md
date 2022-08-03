@@ -129,3 +129,9 @@ export DOCKER_RUN="docker run -it --rm --gpus all -p PORT:8080 -v /path/to/ai-ta
 ```bash
 $DOCKER_RUN /opt/snoop/bin/c4cIdentify --data /data
 ```
+
+The REST server is now accessible through `http://0.0.0.0:PORT`.  
+Main routes are
+* (GET)  `/help` list available routes and their usage
+* (GET)	 `/identify?image=image_uri[&image=image_uri...]` identify the given image(s)
+* (POST) `/identify` identify the image(s) sent as 'image:' in the message body
