@@ -150,3 +150,5 @@ To illustrate the usage of `ai-taxonomist`, we built a DWCA from an occurrence s
 > GBIF.org (07 October 2021) GBIF Occurrence Download  https://doi.org/10.15468/dl.epcnam
 
 This example is running on https://c4c.inria.fr/demo/ as a demonstration of `ai-taxonomist` and its web component 
+
+The REST api is accessible at https://c4c.inria.fr/api/
