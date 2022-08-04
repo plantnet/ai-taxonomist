@@ -55,7 +55,7 @@ python scriptModel.py --data /path/to/dataset --arch resnet18
 ```
 **Warning!** 
 * It will also probably take a while
-* Do not forget to script the trained model with `scriptModel.py`
+* Do not forget to script the trained model with `scriptModel.py` once the training is completed
 
 Optionally, you might plot the training progress (and adjust your parameters) with `progressPlot.py`:
 ```commandline
@@ -75,7 +75,7 @@ python createGT.py --data /path/to/dataset
 * the latest ai-taxonomist image
 
 ####  Setup
-As executable are called through docker, it is easier do define the `DOCKER_COMMAND` as follows:
+As executable are called through docker, it is easier do define `DOCKER_COMMAND` as follows:
   * CPU: 
 ```bash
 export DOCKER_IMAGE="ghcr.io/plantnet/ai-taxonomist/cpu:latest"
@@ -100,8 +100,8 @@ $DOCKER_COMMAND /opt/snoop/bin/snoopDatabase --root /data/ai-taxonomist --corpus
 ```
 
 **Notes:**
-* When you are using a small GPU and a large model `snoopExtractor` might fail by lack of GPU memory. In this case, you diminish the `--nb_threads` parameter (and may be `--nb_lot_per_thread`)
-The rerun `snoopExtractor` with the added `--rescue` flag, and once it succeed the `snoopDatabase`
+* When you are using a small GPU and a large model `snoopExtractor` might fail by lack of GPU memory. In this case, you diminish the `--nb_threads` parameter (and may be `--nb_lot_per_thread`). 
+Then rerun `snoopExtractor` with the added `--rescue` flag, and once it succeed rerun `snoopDatabase`
 * if your dataset does not have enough images (ie. less than 2k), `snoopDatabase` will fail. In this case the identification results illustration by most similar images won't be available, but you still can run image classification by adding the `--no-illustrate` flag to the `c4cIdentify` command bellow.
 
 ## Online identification
