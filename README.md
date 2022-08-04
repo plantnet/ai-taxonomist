@@ -83,7 +83,7 @@ export DOCKER_COMMAND="docker run -it --rm -v /path/to/data:/data --name ait-bui
 ```
   * GPU:
 ```bash
-export DOCKER_IMAGE="ghcr.io/plantnet/ai-taxonomist/cu113:latest"
+export DOCKER_IMAGE="ghcr.io/plantnet/ai-taxonomist/gpu:latest"
 export DOCKER_COMMAND="docker run -it --rm --gpus all -v /path/to/data:/data --name ait-builder $DOCKER_IMAGE" 
 ```
 
@@ -126,7 +126,7 @@ export DOCKER_RUN="docker run -it --rm -p PORT:8080 -v /path/to/ai-taxonomist:/d
 ```
   * GPU:
 ```bash
-export DOCKER_IMAGE="ghcr.io/plantnet/ai-taxonomist/cu113:latest"
+export DOCKER_IMAGE="ghcr.io/plantnet/ai-taxonomist/gpu:latest"
 export DOCKER_RUN="docker run -it --rm --gpus all -p PORT:8080 -v /path/to/ai-taxonomist:/data --name ai-taxonomist $DOCKER_IMAGE" 
 ```
 
