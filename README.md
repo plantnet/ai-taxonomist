@@ -99,8 +99,10 @@ $DOCKER_COMMAND /opt/snoop/bin/snoopDatabase --root /data/ai-taxonomist --corpus
     --database Index --db_plugin Config/db_pmh.json
 ```
 
-When you are using a small GPU and a large model `snoopExtractor` might fail by lack of GPU memory. In this case, you diminish the `--nb_threads` parameter (and may be `--nb_lot_per_thread`)
-The rerun `snoopExtractor` with the added `--rescue_mode` flag
+**Notes:**
+* When you are using a small GPU and a large model `snoopExtractor` might fail by lack of GPU memory. In this case, you diminish the `--nb_threads` parameter (and may be `--nb_lot_per_thread`)
+The rerun `snoopExtractor` with the added `--rescue` flag, and once it succeed the `snoopDatabase`
+* if your dataset does not have enough images (ie. less than 2k), `snoopDatabase` will fail. In this case the identification results illustration by most similar images won't be available, but you still can run image classification by adding the `--no-illustrate` flag to the `c4cIdentify` command bellow.
 
 ## Online identification
 
