@@ -3,6 +3,7 @@ Create a dataset for ai-taxonomist
 Use --help!
 """
 import shutil
+import sys
 import typing
 import argparse
 import json
@@ -66,8 +67,14 @@ def binomials2species_ids(names: typing.TextIO, temp_data: str, verbose: int) ->
     return species_ids
 
 
+class ArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str):
+        self.print_help(sys.stderr)
+        self.exit(2, "%s: error: %s\n" % (self.prog, message))
+
+
 def main():
-    parser = argparse.ArgumentParser(description="ai-taxonomist dataset creation")
+    parser = ArgumentParser(description="ai-taxonomist dataset creation")
     required = parser.add_argument_group("required argument")
     required.add_argument(
         "-d",
@@ -128,7 +135,7 @@ def main():
         "--number",
         type=int,
         metavar="N",
-        default=1000,
+        default=None,
         help="Requested number of images per species, only applies with --name or --species",
     )
 
@@ -165,7 +172,12 @@ def main():
         help="keep P*number_of_images for the validation",
     )
 
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except Exception as e:
+        print("wrong args")
+        print(e)
+        raise e
 
     train_data = args.data
     temp_data = os.path.join(args.data, "temporary")
@@ -252,7 +264,7 @@ def main():
         # allow rerun split by preloading per_label with existing train/val images if any
         train_dir = os.path.join(img_dir, "train")
         val_dir = os.path.join(img_dir, "val")
-        for subdir in [train_dir, val_dir]:
+        for subdir in [train_dir, val_dir, os.path.join(img_dir, "tmp")]:
             if os.path.isdir(subdir):
                 for x in os.walk(subdir):
                     d = x[0]
@@ -304,6 +316,17 @@ def main():
                 for basename, img in img_dict.items()
             ]
             random.shuffle(images)
+            if args.number and len(images) > args.number:
+                if args.verbose:
+                    print(
+                        "only picking",
+                        args.number,
+                        "images out of",
+                        len(images),
+                        "for label",
+                        label,
+                    )
+                images = images[: args.number]
             n = len(images)
             nb_val = int(n * args.percent + 0.5)
             for idx, img in enumerate(images):

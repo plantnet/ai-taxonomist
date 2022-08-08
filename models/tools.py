@@ -9,16 +9,18 @@ from .DenseNet import *
 import torch.nn as nn
 import torchvision
 
+
 def reset_classifier(model: nn.Module, num_classes: int) -> int:
     feat_size = -1
-    if isinstance(model, torchvision.models.MobileNetV2) \
-            or isinstance(model, torchvision.models.MobileNetV3):
+    if isinstance(model, torchvision.models.MobileNetV2) or isinstance(
+        model, torchvision.models.MobileNetV3
+    ):
         feat_size = model.classifier[-1].in_features
         linear = nn.Linear(feat_size, num_classes)
         nn.init.normal_(linear.weight, 0, 0.01)
         nn.init.zeros_(linear.bias)
         model.classifier[-1] = linear
-    elif isinstance(model,torchvision.models.ResNet):
+    elif isinstance(model, torchvision.models.ResNet):
         feat_size = model.fc.in_features
         linear = nn.Linear(feat_size, num_classes)
         nn.init.normal_(linear.weight, 0, 0.01)
@@ -45,12 +47,13 @@ def reset_classifier(model: nn.Module, num_classes: int) -> int:
         model.classifier = linear
     return feat_size
 
+
 def traceable_module(model: nn.Module) -> nn.Module:
     if isinstance(model, torchvision.models.MobileNetV2):
         return TraceMobileNetV2(model)
     elif isinstance(model, torchvision.models.MobileNetV3):
         return TraceMobileNetV3(model)
-    elif isinstance(model,torchvision.models.ResNet):
+    elif isinstance(model, torchvision.models.ResNet):
         return TraceResNet(model)
     elif isinstance(model, torchvision.models.Inception3):
         return TraceInceptionV3(model)
@@ -58,6 +61,3 @@ def traceable_module(model: nn.Module) -> nn.Module:
         return TraceDenseNet(model)
 
     return None
-
-
-
