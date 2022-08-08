@@ -2,3 +2,5 @@ gbif_dl
 .*.sw?
 models/__pycache__/
 .idea/watcherTasks.xml
+nrtest/
+.coverage
