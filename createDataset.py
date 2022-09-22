@@ -329,6 +329,9 @@ def main():
                 images = images[: args.number]
             n = len(images)
             nb_val = int(n * args.percent + 0.5)
+            # check that we have at least 1 validation image
+            if nb_val == 0 and n > 1:
+                nb_val = 1
             for idx, img in enumerate(images):
                 src = os.path.join(img["dir"], img["key"] + ".jpg")
                 dest = os.path.join(
