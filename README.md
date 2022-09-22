@@ -19,7 +19,7 @@ Every command listed bellow answer the --help flag, use it!
 ## Offline preparation
 ### Python phase
 #### Requirements:
-* pytorch (https://pytorch.org/get-started/locally/)
+* pytorch (https://pytorch.org/get-started/locally/ - torchaudio is not needed)
 * gbif-dl (pip install gbif-dl)
 * scipy (pip install scipy)
 * img2dataset (pip install img2dataset)
