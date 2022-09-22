@@ -57,7 +57,7 @@ python scriptModel.py --data /path/to/dataset --arch resnet18
 * It will also probably take a while
 * Do not forget to script the trained model with `scriptModel.py` once the training is completed
 
-Optionally, you might plot the training progress (and adjust your parameters) with `progressPlot.py`:
+Optionally, you might plot the training progress (and adjust your parameters) with `progressPlot.py` (requires regex - pip install regex):
 ```commandline
 python progressPlot.py --train torch_resnet18.log
 ```
