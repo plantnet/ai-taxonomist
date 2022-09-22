@@ -152,3 +152,7 @@ To illustrate the usage of `ai-taxonomist`, we built a DWCA from an occurrence s
 This example is running on https://c4c.inria.fr/demo/ as a demonstration of `ai-taxonomist` and its web component 
 
 The REST api is accessible at https://c4c.inria.fr/api/
+
+----------------
+
+The development of ai-taxonomist was partially funded by the [Cos4Cloud](https://cos4cloud-eosc.eu/) European Horizon 2020 project
