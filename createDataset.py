@@ -205,7 +205,7 @@ def main():
         else:
             # retrieve media from a name or a species list and an optional providers list
             if args.names:
-                species_id = binomials2species_ids(
+                species_ids = binomials2species_ids(
                     args.names, temp_data, verbose=args.verbose
                 )
             elif args.species:
